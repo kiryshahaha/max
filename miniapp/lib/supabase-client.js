@@ -1,3 +1,4 @@
+// lib/supabase-client.js
 import { createClient } from '@supabase/supabase-js';
 
 // Проверяем наличие обязательных переменных окружения
@@ -16,7 +17,10 @@ export const adminSupabase = createClient(
   {
     auth: {
       autoRefreshToken: false,
-      persistSession: false
+      persistSession: false,
+      // Отключаем проверку email
+      detectSessionInUrl: false,
+      autoConfirmEmail: true
     }
   }
 );
@@ -24,5 +28,10 @@ export const adminSupabase = createClient(
 // Создаем клиент для клиентских операций (с RLS)
 export const clientSupabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  {
+    auth: {
+      autoConfirmEmail: true
+    }
+  }
 );

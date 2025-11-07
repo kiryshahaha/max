@@ -1,4 +1,4 @@
-// app/api/auth/user-service.js (альтернативная версия)
+// app/api/auth/user-service.js
 import { adminSupabase } from "../../../../lib/supabase-client";
 
 // Вспомогательные функции для работы с пользователями
@@ -6,7 +6,15 @@ export const userService = {
   // Создание или обновление пользователя
   async createOrUpdateUser(username, password) {
     try {
-      const email = `${username}@guap.ru`;
+      // Определяем, является ли username email-ом
+      let email;
+      if (this.isValidEmail(username)) {
+        // Если пользователь ввел email - используем как есть
+        email = username;
+      } else {
+        // Если это логин - создаем временный email
+        email = `${username}@guap-temp.com`;
+      }
       
       // Сначала ищем пользователя по email
       const { data: { users }, error: listError } = await adminSupabase.auth.admin.listUsers();
@@ -26,6 +34,7 @@ export const userService = {
             user_metadata: {
               ...existingUser.user_metadata,
               username,
+              original_username: username,
               last_login: new Date().toISOString()
             }
           }
@@ -43,6 +52,7 @@ export const userService = {
           email_confirm: true,
           user_metadata: { 
             username,
+            original_username: username,
             last_login: new Date().toISOString()
           }
         });
@@ -57,6 +67,12 @@ export const userService = {
       console.error('Ошибка создания/обновления пользователя:', error);
       throw error;
     }
+  },
+
+  // Проверка валидности email
+  isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   },
 
   // Логирование входа
