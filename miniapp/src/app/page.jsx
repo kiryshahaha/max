@@ -6,6 +6,9 @@ import Image from "next/image";
 const { Label } = Typography;
 export default function Home() {
   return (
+    /*
+    Используем FormData для сбора данных из полей формы
+    */
     <form>
       <Flex
         direction="column"
