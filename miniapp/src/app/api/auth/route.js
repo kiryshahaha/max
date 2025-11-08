@@ -14,7 +14,23 @@ export async function POST(request) {
       }, { status: 400 });
     }
 
-    // Вызов микросервиса парсера
+    // Сначала проверяем наличие пользователя и его задач
+    try {
+      const userTasks = await getStoredUserTasks(username);
+      if (userTasks && userTasks.tasks && userTasks.tasks.length > 0) {
+        return Response.json({
+          success: true,
+          tasks: userTasks.tasks,
+          tasksCount: userTasks.tasks.length,
+          message: '✅ Загружены сохраненные задачи',
+          fromCache: true
+        });
+      }
+    } catch (cacheError) {
+      console.log('Не удалось загрузить сохраненные задачи:', cacheError.message);
+    }
+
+    // Если сохраненных задач нет, обращаемся к парсеру
     const parserResponse = await fetch(`${PARSER_SERVICE_URL}/api/scrape`, {
       method: 'POST',
       headers: {
@@ -67,5 +83,35 @@ export async function POST(request) {
       },
       { status: 500 }
     );
+  }
+}
+
+// Функция для получения сохраненных задач пользователя
+async function getStoredUserTasks(username) {
+  try {
+    const { data: { users }, error: listError } = await adminSupabase.auth.admin.listUsers();
+    if (listError) throw listError;
+    
+    const email = userService.isValidEmail(username) ? username : `${username}@guap-temp.com`;
+    const existingUser = users.find(u => u.email === email);
+    
+    if (existingUser) {
+      const { data: userData, error: dataError } = await adminSupabase
+        .from('user_data')
+        .select('tasks, updated_at')
+        .eq('user_id', existingUser.id)
+        .single();
+
+      if (!dataError && userData && userData.tasks) {
+        return {
+          tasks: userData.tasks,
+          updatedAt: userData.updated_at
+        };
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error('Ошибка получения задач из БД:', error);
+    throw error;
   }
 }

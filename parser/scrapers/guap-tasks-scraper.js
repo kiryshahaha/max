@@ -1,3 +1,4 @@
+//parser/scrapers/guap-tasks-scraper.js
 import { BaseScraper } from './base-scraper.js';
 import { GuapAuthStrategy } from '../auth/strategies/guap-auth.js';
 
