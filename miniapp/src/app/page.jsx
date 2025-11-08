@@ -1,21 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styles from './page.module.css';
+import TasksTable from '@/components/TasksTable/TasksTable';
+import ReportsTable from '@/components/ReportsTable/ReportsTable';
 
-export default function LoginPage() {
+export default function Home() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [status, setStatus] = useState('');
   const [tasks, setTasks] = useState([]);
+  const [reports, setReports] = useState([]);
+  const [activeTab, setActiveTab] = useState('tasks');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setStatus('⏳ Выполняется вход...');
-    setTasks([]);
+    if (!username || !password) {
+      setStatus('❌ Введите логин и пароль');
+      return;
+    }
+
+    setIsLoading(true);
+    setStatus('⏳ Выполняется вход и получение данных...');
 
     try {
-      const res = await fetch('/api/auth', {
+      const endpoint = activeTab === 'tasks' ? '/api/post-tasks' : '/api/post-reports';
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -26,14 +37,69 @@ export default function LoginPage() {
       }
 
       const data = await res.json();
-      setStatus(data.message || 'Неизвестный ответ');
       
-      if (data.tasks) {
-        setTasks(data.tasks);
+      if (data.success) {
+        if (activeTab === 'tasks' && data.tasks) {
+          setTasks(data.tasks);
+          setStatus(`✅ Получено ${data.tasks.length} задач`);
+        } else if (activeTab === 'reports' && data.reports) {
+          setReports(data.reports);
+          setStatus(`✅ Получено ${data.reports.length} отчетов`);
+        } else {
+          setStatus(data.message || 'Данные успешно получены');
+        }
+      } else {
+        setStatus(`❌ ${data.message || 'Ошибка получения данных'}`);
       }
     } catch (err) {
       console.error('Ошибка:', err);
       setStatus(`❌ Ошибка: ${err.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRefreshData = async () => {
+    if (!username || !password) {
+      setStatus('❌ Для обновления данных введите логин и пароль');
+      return;
+    }
+
+    setIsLoading(true);
+    setStatus('⏳ Обновляем данные...');
+
+    try {
+      const endpoint = activeTab === 'tasks' ? '/api/tasks' : '/api/reports';
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
+      const data = await res.json();
+      
+      if (data.success) {
+        if (activeTab === 'tasks' && data.tasks) {
+          setTasks(data.tasks);
+          setStatus(`✅ Обновлено ${data.tasks.length} задач`);
+        } else if (activeTab === 'reports' && data.reports) {
+          setReports(data.reports);
+          setStatus(`✅ Обновлено ${data.reports.length} отчетов`);
+        } else {
+          setStatus(data.message || 'Данные успешно обновлены');
+        }
+      } else {
+        setStatus(`❌ ${data.message || 'Ошибка обновления данных'}`);
+      }
+    } catch (err) {
+      console.error('Ошибка:', err);
+      setStatus(`❌ Ошибка обновления: ${err.message}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -45,6 +111,13 @@ export default function LoginPage() {
   };
 
   const getTaskStatusClass = (statusClass) => {
+    if (statusClass.includes('bg-success')) return styles.statusSuccess;
+    if (statusClass.includes('bg-warning')) return styles.statusWarning;
+    if (statusClass.includes('bg-danger')) return styles.statusError;
+    return styles.statusDefault;
+  };
+
+  const getReportStatusClass = (statusClass) => {
     if (statusClass.includes('bg-success')) return styles.statusSuccess;
     if (statusClass.includes('bg-warning')) return styles.statusWarning;
     if (statusClass.includes('bg-danger')) return styles.statusError;
@@ -78,124 +151,85 @@ export default function LoginPage() {
           required
           className={styles.input}
         />
-        <button type="submit" className={styles.button}>
-          Войти и получить задания
+        <button 
+          type="submit" 
+          className={styles.button}
+          disabled={isLoading}
+        >
+          {isLoading ? '⏳ Загрузка...' : 'Войти и получить данные'}
         </button>
       </form>
+
+      {/* Табы для переключения между задачами и отчетами */}
+      <div className={styles.tabs}>
+        <button 
+          className={`${styles.tab} ${activeTab === 'tasks' ? styles.tabActive : ''}`}
+          onClick={() => setActiveTab('tasks')}
+        >
+          Задания ({tasks.length})
+        </button>
+        <button 
+          className={`${styles.tab} ${activeTab === 'reports' ? styles.tabActive : ''}`}
+          onClick={() => setActiveTab('reports')}
+        >
+          Отчеты ({reports.length})
+        </button>
+      </div>
       
       {status && (
         <div className={`${styles.status} ${getStatusClass()}`}>
           {status}
+          {(tasks.length > 0 || reports.length > 0) && (
+            <button 
+              onClick={handleRefreshData}
+              className={styles.refreshButton}
+              disabled={isLoading}
+            >
+              {isLoading ? '⏳' : '🔄 Обновить'}
+            </button>
+          )}
         </div>
       )}
 
-      {tasks.length > 0 && (
-        <div className={styles.tasksContainer}>
-          <h3 className={styles.tasksTitle}>Найдено заданий: {tasks.length}</h3>
-          <div style={{ overflowX: 'auto' }}>
-<table className={styles.table}>
-  <thead>
-    <tr>
-      <th>Дисциплина</th>
-      <th>Номер</th>
-      <th>Название задания</th>
-      <th>Статус</th>
-      <th>Баллы</th>
-      <th>Тип задания</th>
-      <th>Доп. статус</th>
-      <th>Дедлайн</th>
-      <th>Обновлено</th>
-      <th>Преподаватель</th>
-      <th>Действие</th>
-    </tr>
-  </thead>
-  <tbody>
-    {tasks.map((task, index) => (
-      <tr key={index}>
-        <td>
-          {task.subjectLink ? (
-            <a 
-              href={task.subjectLink} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className={styles.subjectLink}
+      {/* Блок задач */}
+      {activeTab === 'tasks' && tasks.length > 0 && (
+        <>
+          <div className={styles.tasksHeader}>
+            <h3 className={styles.tasksTitle}>Найдено заданий: {tasks.length}</h3>
+            <button 
+              onClick={handleRefreshData}
+              className={styles.refreshButtonLarge}
+              disabled={isLoading}
             >
-              {task.subject}
-            </a>
-          ) : (
-            task.subject
-          )}
-        </td>
-        <td className={styles.numberCell}>
-          {task.taskNumber}
-        </td>
-        <td>
-          {task.taskLink ? (
-            <a 
-              href={task.taskLink} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className={styles.taskLink}
-            >
-              {task.taskName}
-            </a>
-          ) : (
-            task.taskName
-          )}
-        </td>
-        <td>
-          <span className={getTaskStatusClass(task.statusClass)}>
-            {task.status}
-          </span>
-        </td>
-        <td className={styles.scoreCell}>
-          {task.score}
-        </td>
-        <td>
-          {task.taskType}
-        </td>
-        <td>
-          {task.additionalStatus}
-        </td>
-        <td className={getDeadlineClass(task.deadlineClass)}>
-          {task.deadline}
-        </td>
-        <td className={styles.updatedAtCell}>
-          {task.updatedAt}
-        </td>
-        <td>
-          {task.teacherLink ? (
-            <a 
-              href={task.teacherLink} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className={styles.teacherLink}
-            >
-              {task.teacher}
-            </a>
-          ) : (
-            task.teacher
-          )}
-        </td>
-        <td>
-          {task.actionButton && (
-            <a 
-              href={task.actionButton} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className={styles.actionLink}
-              title="Просмотреть задание"
-            >
-              👁️
-            </a>
-          )}
-        </td>
-      </tr>
-    ))}
-  </tbody>
-</table>
+              {isLoading ? '⏳ Обновление...' : '🔄 Обновить задачи'}
+            </button>
           </div>
-        </div>
+          <TasksTable 
+            tasks={tasks}
+            getTaskStatusClass={getTaskStatusClass}
+            getDeadlineClass={getDeadlineClass}
+          />
+        </>
+      )}
+
+      {/* Блок отчетов */}
+      {activeTab === 'reports' && reports.length > 0 && (
+        <>
+          <div className={styles.reportsHeader}>
+            <h3 className={styles.reportsTitle}>Найдено отчетов: {reports.length}</h3>
+            <button 
+              onClick={handleRefreshData}
+              className={styles.refreshButtonLarge}
+              disabled={isLoading}
+            >
+              {isLoading ? '⏳ Обновление...' : '🔄 Обновить отчеты'}
+            </button>
+          </div>
+          <ReportsTable 
+            reports={reports}
+            getReportStatusClass={getReportStatusClass}
+          />
+        </>
       )}
     </div>
   );

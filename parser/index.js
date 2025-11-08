@@ -1,4 +1,5 @@
 import { GuapTasksScraper } from './scrapers/guap-tasks-scraper.js';
+import { GuapReportsScraper } from './scrapers/guap-reports-scraper.js';
 import { ErrorHandler } from './utils/error-handler.js';
 
 export async function scrapeGuapTasks(credentials) {
@@ -7,6 +8,18 @@ export async function scrapeGuapTasks(credentials) {
   try {
     await scraper.validateCredentials(credentials);
     const result = await scraper.scrapeTasks(credentials);
+    return result;
+  } catch (error) {
+    return ErrorHandler.handleScrapingError(error);
+  }
+}
+
+export async function scrapeGuapReports(credentials) {
+  const scraper = new GuapReportsScraper();
+  
+  try {
+    await scraper.validateCredentials(credentials);
+    const result = await scraper.scrapeReports(credentials);
     return result;
   } catch (error) {
     return ErrorHandler.handleScrapingError(error);

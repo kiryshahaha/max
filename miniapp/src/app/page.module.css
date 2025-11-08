@@ -58,6 +58,13 @@
   transform: translateY(0);
 }
 
+.button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 .status {
   margin-bottom: 20px;
   min-height: 24px;
@@ -65,6 +72,10 @@
   border-radius: 8px;
   text-align: center;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
 
 .statusSuccess {
@@ -85,161 +96,98 @@
   border: 1px solid #bbdefb;
 }
 
-.tasksContainer {
+.tabs {
+  display: flex;
+  margin-bottom: 20px;
   background: white;
-  padding: 25px;
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.tasksTitle {
-  color: #1a365d;
-  margin-bottom: 20px;
-  font-weight: 600;
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-  background: white;
-  border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.table th {
-  background-color: #f8fafc;
-  padding: 12px 8px;
-  border: 1px solid #e2e8f0;
-  text-align: left;
+.tab {
+  flex: 1;
+  padding: 15px 20px;
+  background: #f8fafc;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-size: 16px;
   font-weight: 600;
   color: #4a5568;
-  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-.table td {
-  padding: 12px 8px;
+.tab:hover {
+  background: #edf2f7;
+  color: #2d3748;
+}
+
+.tabActive {
+  background: white;
+  color: #0070f3;
+  border-bottom-color: #0070f3;
+}
+
+.refreshButton {
+  background: #f7fafc;
   border: 1px solid #e2e8f0;
-  vertical-align: top;
-  word-wrap: break-word;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.actionLink {
-  color: #0070f3;
-  text-decoration: none;
-  font-size: 18px;
-  display: inline-block;
+.refreshButton:hover:not(:disabled) {
+  background: #edf2f7;
+  border-color: #cbd5e0;
 }
 
-.actionLink:hover {
-  color: #0051a8;
-  transform: scale(1.1);
+.refreshButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-.subjectLink {
-  color: #0070f3;
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.subjectLink:hover {
-  text-decoration: underline;
-}
-
-.taskLink {
-  color: #0070f3;
-  text-decoration: none;
-}
-
-.taskLink:hover {
-  text-decoration: underline;
-}
-
-.teacherLink {
-  color: #666;
-  text-decoration: none;
-  font-size: 13px;
-}
-
-.teacherLink:hover {
-  color: #0070f3;
-  text-decoration: underline;
-}
-
-/* Стили статусов заданий */
-.statusSuccess {
-  color: #2d7d32;
+.refreshButtonLarge {
+  background: linear-gradient(135deg, #0070f3, #0051a8);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
   font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 4px;
-  background-color: #f0fff4;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.statusWarning {
-  color: #f57c00;
+.refreshButtonLarge:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 112, 243, 0.3);
+}
+
+.refreshButtonLarge:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.tasksHeader,
+.reportsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.tasksTitle,
+.reportsTitle {
+  color: #1a365d;
+  margin: 0;
   font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 4px;
-  background-color: #fff3e0;
-}
-
-.statusError {
-  color: #c53030;
-  font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 4px;
-  background-color: #ffebee;
-}
-
-.statusDefault {
-  color: #666;
-  font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 4px;
-  background-color: #f8f9fa;
-}
-
-/* Стили дедлайнов */
-.deadlineWarning {
-  color: #f57c00;
-  font-weight: 600;
-}
-
-.deadlineError {
-  color: #c53030;
-  font-weight: 600;
-}
-
-.deadlineDefault {
-  color: #666;
-}
-
-.scoreCell {
-  font-weight: 600;
-  text-align: center;
-}
-
-.updatedAtCell {
-  color: #666;
-  font-size: 13px;
-  white-space: nowrap;
-}
-
-/* Обновите стили для дедлайна */
-.deadlineWarning {
-  color: #f57c00;
-  font-weight: 600;
-}
-
-.deadlineError {
-  color: #c53030;
-  font-weight: 600;
-}
-
-.deadlineDefault {
-  color: #666;
-  font-style: italic; /* Для "Спи спокойно" */
 }
 
 /* Адаптивность для мобильных устройств */
@@ -249,16 +197,13 @@
     padding: 0 15px;
   }
   
-  .table {
-    font-size: 12px;
+  .tabs {
+    flex-direction: column;
   }
   
-  .table th,
-  .table td {
-    padding: 8px 4px;
-  }
-  
-  .tasksContainer {
-    padding: 15px;
+  .tasksHeader,
+  .reportsHeader {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
