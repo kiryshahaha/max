@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { scrapeGuapTasks, scrapeGuapReports, scrapeGuapProfile } from './index.js';
+import { scrapeGuapTasks, scrapeGuapReports, scrapeGuapProfile, scrapeGuapSchedule } from './index.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
