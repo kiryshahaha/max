@@ -1,21 +1,25 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
+from db.dependencies import get_supabase_client
+from datetime import datetime
 
-router = APIRouter(prefix="/schedule", tags=["Schedule"]) 
+router = APIRouter(prefix="/schedule", tags=["Schedule"])
 
 @router.get("/")
-async def get_schedule(week:int = Query(None), group = Query(None)):
-    # получить расписание (через scraping_service или БД)
-    return {"schedule": [], "params": {"week": week, "group": group}}
-
-@router.get("/today")
-async def get_today_schedule():
-    # получить расписание на сегодня
-    return {"schedule": "Today's schedule (stub)"}
-
-@router.post("/refresh")
-async def refresh_schedule():
-    # триггер обновления расписания через парсер
-    return {"message": "Schedule refresh started (stub)"}
-
-
-
+async def get_schedule(
+    email: str = Query(..., description="Email пользователя"),
+    week: int = Query(None, description="Номер недели"),
+    group: str = Query(None, description="Группа (опционально)"),
+    db = Depends(get_supabase_client)
+):
+    """Получение расписания пользователя по email"""
+    schedule = db.get_schedule_by_email(email, week) or {}  # Если None, возвращаем пустой словарь
+    
+    return {
+        "success": True,
+        "schedule": schedule,
+        "user_email": email,
+        "params": {
+            "week": week,
+            "group": group
+        }
+    }
