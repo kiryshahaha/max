@@ -1,5 +1,5 @@
 :root {
-  --background: #a75454;
+  --background: #edeef3;
   --foreground: #171717;
 }
 
@@ -10,7 +10,7 @@
   }
 }
 .wrap {
-  height: 100dvh;
+  min-height: 100dvh;
 }
 html,
 body {
