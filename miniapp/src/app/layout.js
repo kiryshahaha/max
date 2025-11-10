@@ -5,6 +5,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { App, ConfigProvider, theme } from "antd";
 import { useEffect, useState } from "react";
+import BottomNavBar from "@/components/BottomNavBar/BottomNavBar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,7 +40,10 @@ export default function RootLayout({ children }) {
               algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
             }}
           >
-            <MaxUI>{children}</MaxUI>
+            <MaxUI>
+              {children}
+              <BottomNavBar />
+            </MaxUI>
           </ConfigProvider>
         </App>
       </body>

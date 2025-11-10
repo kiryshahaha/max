@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Button, Flex, Input, Typography } from "@maxhub/max-ui";
+import { Button, Flex, Input, Panel, Typography } from "@maxhub/max-ui";
 import { Lock, Mail } from "lucide-react";
 import Image from "next/image";
 import { message } from "antd";
@@ -27,7 +27,7 @@ export default function auth() {
     }
   };
   return (
-    <>
+    <Panel mode="secondary">
       {contextHolder}
       <form
         onSubmit={(e) => {
@@ -39,7 +39,7 @@ export default function auth() {
           gap={20}
           justify="center"
           align="center"
-          style={{ height: "100vh" }}
+          className="wrap"
         >
           <Image src="/MAI.svg" alt="Логотип МАИ" width={100} height={100} />
           <Label
@@ -69,6 +69,6 @@ export default function auth() {
           <Button type="submit">Войти</Button>
         </Flex>
       </form>
-    </>
+    </Panel>
   );
 }
