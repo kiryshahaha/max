@@ -8,29 +8,16 @@ export class GuapTasksScraper extends BaseScraper {
     this.authStrategy = GuapAuthStrategy;
   }
 
-  async scrapeTasks(credentials) {
-    let browser;
+   async scrapeTasks(credentials) {
+    let page;
+    
     try {
-      browser = await this.browserManager.launch();
-      const page = await this.browserManager.createPage(browser);
-
-      // Аутентификация
-      const finalUrl = await this.authStrategy.login(page, credentials);
+      await this.validateCredentials(credentials);
       
-      if (!this.authStrategy.isLoginSuccessful(finalUrl)) {
-        // Проверяем наличие ошибки авторизации
-        const errorText = await page.evaluate(() => {
-          const errorElement = document.querySelector('.alert-error');
-          return errorElement ? errorElement.textContent.trim() : null;
-        });
-        
-        if (errorText) {
-          throw new Error(errorText);
-        }
-        throw new Error('Неверный логин или пароль');
-      }
-
-      // Переход к задачам
+      // Используем существующую сессию или создаем новую
+      page = await this.getAuthenticatedPage(credentials);
+      
+      // Переход к задачам (уже аутентифицированы)
       await this.navigateToTasks(page);
       
       // Получаем общее количество задач
@@ -49,15 +36,25 @@ export class GuapTasksScraper extends BaseScraper {
       };
 
     } catch (error) {
-      throw error;
-    } finally {
-      if (browser) {
-        await browser.close();
+      // При ошибке инвалидируем сессию
+      if (page) {
+        await this.invalidateSession(credentials);
       }
+      throw error;
+    }
+    // Не закрываем страницу - она остается в сессии для повторного использования
+  }
+
+    async invalidateSession(credentials) {
+    const userId = this.getUserId(credentials);
+    const session = this.sessionManager.sessions.get(userId);
+    if (session) {
+      await session.page.close();
+      this.sessionManager.sessions.delete(userId);
     }
   }
 
-  async navigateToTasks(page) {
+async navigateToTasks(page) {
     console.log('Переходим на страницу заданий...');
     await page.goto('https://pro.guap.ru/inside/student/tasks/', { 
       waitUntil: 'networkidle2', 
@@ -270,7 +267,6 @@ async parseTasksTable(page) {
             subjectLink = cell.querySelector('a.blue-link');
             
             // Ищем преподавателя в ячейке дисциплины
-            // Преподаватель обычно идет после названия дисциплины
             const cellHTML = cell.innerHTML;
             const teacherMatch = cellHTML.match(/<br>\s*<a[^>]*class="blue-link"[^>]*>([^<]*)<\/a>/);
             if (teacherMatch) {
@@ -318,7 +314,6 @@ async parseTasksTable(page) {
           const disciplineCell = subjectLink.parentElement;
           const allLinks = disciplineCell.querySelectorAll('a.blue-link');
           if (allLinks.length > 1) {
-            // Второй blue-link в ячейке дисциплины - это преподаватель
             teacherLink = allLinks[1];
           }
         }
@@ -332,7 +327,6 @@ async parseTasksTable(page) {
             deadline = deadlineSpan.textContent?.trim();
             deadlineClass = deadlineSpan.className || '';
           } else if (deadlineElement.classList.contains('text-center')) {
-            // Ячейка text-center без span - значит дедлайна нет
             deadline = 'Спи спокойно';
             deadlineClass = '';
           }
@@ -344,58 +338,83 @@ async parseTasksTable(page) {
           updatedAt = updateTimeElement.textContent?.trim();
         }
 
+        // Извлекаем ID задачи из ссылки
+        let taskId = null;
+        if (taskLink?.href) {
+          const taskIdMatch = taskLink.href.match(/\/tasks\/(\d+)/);
+          if (taskIdMatch) {
+            taskId = parseInt(taskIdMatch[1]);
+          }
+        }
+
+        // Извлекаем баллы
+        let achievedScore = 0;
+        let maxScore = 0;
+        if (scoreElement?.textContent) {
+          const scoreMatch = scoreElement.textContent.trim().match(/(\d+)\s*\/\s*(\d+)/);
+          if (scoreMatch) {
+            achievedScore = parseInt(scoreMatch[1]);
+            maxScore = parseInt(scoreMatch[2]);
+          }
+        }
+
+        // Определяем статус
+        let statusCode = 'unknown';
+        let statusText = statusBadge?.textContent?.trim() || '';
+        
+        if (statusText.toLowerCase().includes('принят') || statusText.toLowerCase().includes('accepted')) {
+          statusCode = 'accepted';
+        } else if (statusText.toLowerCase().includes('проверяется') || statusText.toLowerCase().includes('checking')) {
+          statusCode = 'checking';
+        } else if (statusText.toLowerCase().includes('отправлен') || statusText.toLowerCase().includes('submitted')) {
+          statusCode = 'submitted';
+        } else if (statusText.toLowerCase().includes('не отправлен') || statusText.toLowerCase().includes('not submitted')) {
+          statusCode = 'not_submitted';
+        }
+
+        // Формируем задачу в новом формате
         const task = {
-          // Действие (кнопка просмотра)
-          actionButton: actionButton?.href || '',
-          
-          // Дисциплина
-          subject: subjectLink?.textContent?.trim() || '',
-          subjectLink: subjectLink?.href || '',
-          
-          // Номер задания
-          taskNumber: numberElement?.textContent?.trim() || '',
-          
-          // Название задания
-          taskName: taskLink?.textContent?.trim() || '',
-          taskLink: taskLink?.href || '',
-          
-          // Статус
-          status: statusBadge?.textContent?.trim() || '',
-          statusClass: statusBadge?.className || '',
-          
-          // Баллы
-          score: scoreElement?.textContent?.trim() || '0 / 0',
-          
-          // Тип задания
-          taskType: taskTypeElement?.textContent?.trim() || '',
-          
-          // Дополнительный статус
-          additionalStatus: additionalStatusElement?.textContent?.trim() || '',
-          
-          // Дедлайн
-          deadline: deadline,
-          deadlineClass: deadlineClass,
-          
-          // Дата обновления
-          updatedAt: updatedAt,
-          
-          // Преподаватель
-          teacher: teacherLink?.textContent?.trim() || '',
-          teacherLink: teacherLink?.href || ''
+          task: {
+            id: taskId,
+            number: numberElement?.textContent?.trim() ? parseInt(numberElement.textContent.trim()) : null,
+            name: taskLink?.textContent?.trim() || '',
+            type: taskTypeElement?.textContent?.trim() || '',
+            link: taskLink?.href || '',
+            created_at: updatedAt || new Date().toISOString()
+          },
+          subject: {
+            name: subjectLink?.textContent?.trim() || '',
+            link: subjectLink?.href || ''
+          },
+          teacher: {
+            full_name: teacherLink?.textContent?.trim() || '',
+            link: teacherLink?.href || ''
+          },
+          deadline: {
+            date: null, // Можно парсить дату из deadline если нужно
+            text: deadline
+          },
+          score: {
+            achieved: achievedScore,
+            max: maxScore
+          },
+          status: {
+            code: statusCode,
+            text: statusText,
+            additional_text: ''
+          }
         };
         
         console.log(`Задача ${index}:`, {
-          subject: task.subject,
-          taskName: task.taskName,
-          status: task.status,
-          deadline: task.deadline,
-          deadlineClass: task.deadlineClass,
-          updatedAt: task.updatedAt,
-          teacher: task.teacher
+          id: task.task.id,
+          name: task.task.name,
+          status: task.status.text,
+          deadline: task.deadline.text,
+          score: `${task.score.achieved}/${task.score.max}`
         });
         
         // Добавляем задачу если есть хотя бы дисциплина или название задания
-        if (task.subject || task.taskName) {
+        if (task.subject.name || task.task.name) {
           tasks.push(task);
         }
       }
