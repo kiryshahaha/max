@@ -5,7 +5,7 @@ router = APIRouter(prefix="/reports", tags=["Reports"])
 
 @router.get("/")
 async def get_reports(
-    uid: str = Query(..., description="Email пользователя"),
+    uid: str = Query(..., description="user_id пользователя"),
     db = Depends(get_supabase_client)
 ):
     """Получение отчеты пользователя по email"""

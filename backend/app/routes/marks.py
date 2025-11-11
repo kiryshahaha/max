@@ -5,7 +5,7 @@ router = APIRouter(prefix="/marks", tags=["Marks"])
 
 @router.get("/")
 async def get_marks(
-    uid: str = Query(..., description="Email пользователя"),
+    uid: str = Query(..., description="user_id пользователя"),
     db = Depends(get_supabase_client)
 ):
     """Получение оценок пользователя по email"""
