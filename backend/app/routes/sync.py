@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-router = APIRouter(prefix="/sync", tags=["Sync"])
+router = APIRouter()
 
 @router.post("/")
 async def sync_data():

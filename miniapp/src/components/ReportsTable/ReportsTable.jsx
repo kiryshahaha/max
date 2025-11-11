@@ -24,9 +24,9 @@ export default function ReportsTable({ reports, getReportStatusClass }) {
               <tr key={index}>
                 <td>
                   <div className={styles.reportActions}>
-                    {report.attachments?.download_url && (
+                    {report.downloadButton && (
                       <a 
-                        href={report.attachments.download_url} 
+                        href={report.downloadButton} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className={styles.downloadLink}
@@ -35,49 +35,60 @@ export default function ReportsTable({ reports, getReportStatusClass }) {
                         📥
                       </a>
                     )}
+                    {report.removeButton && (
+                      <a 
+                        href={report.removeButton} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className={styles.removeLink}
+                        title="Удалить отчет"
+                      >
+                        🗑️
+                      </a>
+                    )}
                   </div>
                 </td>
                 <td className={styles.numberCell}>
-                  {report.task?.number}
+                  {report.number}
                 </td>
                 <td>
-                  {report.task?.link ? (
+                  {report.taskLink ? (
                     <a 
-                      href={report.task.link} 
+                      href={report.taskLink} 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className={styles.taskLink}
                     >
-                      {report.task.name}
+                      {report.taskName}
                     </a>
                   ) : (
-                    report.task?.name
+                    report.taskName
                   )}
                 </td>
                 <td>
-                  {report.teacher?.link ? (
+                  {report.teacherLink ? (
                     <a 
-                      href={report.teacher.link} 
+                      href={report.teacherLink} 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className={styles.teacherLink}
                     >
-                      {report.teacher.full_name}
+                      {report.teacher}
                     </a>
                   ) : (
-                    report.teacher?.full_name
+                    report.teacher
                   )}
                 </td>
                 <td>
-                  <span className={getReportStatusClass(report.status?.code)}>
-                    {report.status?.text}
+                  <span className={getReportStatusClass(report.statusClass)}>
+                    {report.status}
                   </span>
                 </td>
                 <td className={styles.scoreCell}>
-                  {report.score?.is_empty ? '―' : `${report.score.achieved}/${report.score.max}`}
+                  {report.score}
                 </td>
                 <td className={styles.uploadDateCell}>
-                  {report.load_date?.text}
+                  {report.uploadDate}
                 </td>
               </tr>
             ))}
