@@ -1,6 +1,6 @@
 .navBar {
   position: fixed;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(8px);
   bottom: 0;
   width: 100%;
   padding-block: 0.5rem;
