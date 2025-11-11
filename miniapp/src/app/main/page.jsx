@@ -1,39 +1,63 @@
 "use client";
 import {
-  Avatar,
   Button,
   CellHeader,
   CellList,
   CellSimple,
   Container,
+  Dot,
   EllipsisText,
   Flex,
   Panel,
-  ToolButton,
-  Typography,
 } from "@maxhub/max-ui";
-import { Tag } from "antd";
+import { Badge, Divider, Steps, Tag } from "antd";
 import React from "react";
-const { Headline } = Typography;
 export default function MainPage() {
   return (
     <Panel mode="secondary" className="wrap">
-      <Flex direction="column" align="stretch" gap={30}>
+      <Flex direction="column" align="stretch" gap={5}>
         <Container>
           <CellList
             filled
             mode="island"
-            header={<CellHeader titleStyle="caps">Расписание</CellHeader>}
+            header={
+              <CellHeader
+                titleStyle="caps"
+                after={<Dot appearance="accent-red"></Dot>}
+              >
+                Расписание на сегодня
+              </CellHeader>
+            }
           >
-            <CellSimple
-              before={<Button onClick={() => alert("He")}>Hello</Button>}
-              title="Математика"
-              showChevron
-            ></CellSimple>
+            <CellSimple showChevron onClick={() => {}}>
+              <Steps
+                direction="vertical"
+                percent={60}
+                items={[
+                  {
+                    title: "Математика",
+                    status: "finish",
+                    subTitle: "2",
+                    description: "09:00 — 10:30, Ауд. 205",
+                  },
+                  {
+                    title: "Физика",
+                    status: "process",
+                    description: "11:00 — 12:30, Ауд. 210",
+                  },
+                  {
+                    title: "Программирование",
+                    description: "13:00 — 14:30, Ауд. 302",
+                  },
+                ]}
+              />
+            </CellSimple>
           </CellList>
         </Container>
 
-        <Container >
+        <Divider></Divider>
+
+        <Container>
           <CellList
             filled
             mode="island"
@@ -42,13 +66,26 @@ export default function MainPage() {
             }
           >
             <CellSimple
-              before={<Button onClick={() => alert("He")}>09.11</Button>}
+              after={<Tag color="error">{"19.08"}</Tag>}
               title="Основы программирования"
-              showChevron
+              subtitle="ЛР №5. «Множественное наследование в языке С++»"
+            ></CellSimple>
+            <CellSimple
+              after={<Tag color="warning">{11.11}</Tag>}
+              title="Основы программирования"
+              subtitle="ЛР №5Д. «Виртуальные функции и абстрактные классы»"
+            ></CellSimple>
+            <CellSimple
+              after={<Tag color="success">{14.12}</Tag>}
+              title="Основы программирования"
+              subtitle="ЛР №5Д. «Виртуальные функции и абстрактные классы»"
             ></CellSimple>
           </CellList>
         </Container>
-        <Container >
+
+        <Divider></Divider>
+
+        <Container>
           <CellList
             filled
             mode="island"
@@ -56,32 +93,49 @@ export default function MainPage() {
           >
             <CellSimple
               title="Алгоритмы и структуры данных"
-              after={<Tag color="error">Отклонен</Tag>}
-            >
-              <a
-                href="https://pro.guap.ru/inside/student/tasks/168453"
-                rel="noreferrer"
-                target="_blank"
-              >
-                <EllipsisText maxLines={1}>
-                  ЛАБОРАТОРНАЯ РАБОТА №1 «АНАЛИЗ СЛОЖНОСТИ АЛГОРИТМОВ»
-                </EllipsisText>
-              </a>
-            </CellSimple>
+              after={<Badge status="error"></Badge>}
+              subtitle={
+                <a
+                  href="https://pro.guap.ru/inside/student/tasks/168453"
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  <EllipsisText maxLines={1}>
+                    ЛАБОРАТОРНАЯ РАБОТА №1 «АНАЛИЗ СЛОЖНОСТИ АЛГОРИТМОВ»
+                  </EllipsisText>
+                </a>
+              }
+            ></CellSimple>
             <CellSimple
               title="Алгоритмы и структуры данных"
-              after={<Tag color="orange">Ожидает</Tag>}
-            >
-              <a
-                href="https://pro.guap.ru/inside/student/tasks/168453"
-                rel="noreferrer"
-                target="_blank"
-              >
-                <EllipsisText maxLines={1}>
-                  ЛАБОРАТОРНАЯ РАБОТА №1 «АНАЛИЗ СЛОЖНОСТИ АЛГОРИТМОВ»
-                </EllipsisText>
-              </a>
-            </CellSimple>
+              after={<Badge status="warning"></Badge>}
+              subtitle={
+                <a
+                  href="https://pro.guap.ru/inside/student/tasks/168453"
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  <EllipsisText maxLines={1}>
+                    ЛАБОРАТОРНАЯ РАБОТА №1 «АНАЛИЗ СЛОЖНОСТИ АЛГОРИТМОВ»
+                  </EllipsisText>
+                </a>
+              }
+            ></CellSimple>
+            <CellSimple
+              title="Алгоритмы и структуры данных"
+              after={<Badge status="warning"></Badge>}
+              subtitle={
+                <a
+                  href="https://pro.guap.ru/inside/student/tasks/168453"
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  <EllipsisText maxLines={1}>
+                    ЛАБОРАТОРНАЯ РАБОТА №1 «АНАЛИЗ СЛОЖНОСТИ АЛГОРИТМОВ»
+                  </EllipsisText>
+                </a>
+              }
+            ></CellSimple>
           </CellList>
         </Container>
       </Flex>
