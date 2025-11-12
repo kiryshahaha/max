@@ -1,39 +1,128 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button, Flex, Input, Panel, Typography } from "@maxhub/max-ui";
 import { Lock, Mail } from "lucide-react";
 import Image from "next/image";
 import { message } from "antd";
+import { clientSupabase as supabase } from "../../../lib/supabase-client";
+
 const { Label } = Typography;
-export default function auth() {
+
+export default function Auth() {
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
   const [msg, contextHolder] = message.useMessage();
-  /**
-   * Функция для валидаии и сбора данных с полей
-   * @param {Event} e
-   */
-  const getValideData = (e) => {
-    e.preventDefault();
-    const login = e.target.login.value.trim();
-    const password = e.target.password.value.trim();
-    if (!login && !password) {
-      /*
-      Используем msg для отображения уведомления 
-      Сучествует несколько вариантов - можно просмотреть в параметрах
-      */
-      msg.error("Заполните все поля");
-    } else {
-      const data = { login, password };
-      console.log(data);
+
+  const handleLogin = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+
+  const login = e.target.login.value.trim();
+  const password = e.target.password.value.trim();
+
+  if (!login || !password) {
+    msg.error("Заполните все поля");
+    setLoading(false);
+    return;
+  }
+
+  try {
+    // 1. Проверяем креды через парсер
+    const parserSuccess = await initializeParserSession(login, password);
+    
+    if (!parserSuccess) {
+      msg.error("Неверный логин или пароль ЛК ГУАП");
+      setLoading(false);
+      return;
+    }
+
+    // 2. Сохраняем пароль в localStorage
+    localStorage.setItem('guap_password', password);
+
+    const email = isValidEmail(login) ? login : `${login}@guap-temp.com`;
+
+    // 3. Создаем/входим в Supabase
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password: password
+    });
+
+    if (signInError) {
+      // Если пользователя нет - регистрируем
+      if (signInError.message?.includes('Invalid login credentials')) {
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password: password,
+          options: {
+            data: {
+              original_username: login,
+              username: login,
+              last_login: new Date().toISOString(),
+            }
+          }
+        });
+
+        if (signUpError) throw signUpError;
+      } else {
+        throw signInError;
+      }
+    }
+
+    // 4. Успешная авторизация
+    msg.success("Успешный вход!");
+    router.push('/main');
+
+  } catch (error) {
+    console.error('Login error:', error);
+    // При ошибке очищаем пароль из localStorage
+    localStorage.removeItem('guap_password');
+    msg.error(error.message || "Ошибка авторизации");
+  } finally {
+    setLoading(false);
+  }
+};
+
+  const initializeParserSession = async (username, password) => {
+    try {
+      const response = await fetch('http://localhost:3001/api/scrape/init-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (!response.ok) {
+        console.warn('Парсер-сервис недоступен');
+        return false;
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.sessionActive) {
+        console.log('✅ Сессия парсера инициализирована');
+        return true;
+      } else {
+        console.warn('❌ Ошибка инициализации сессии парсера:', result.message);
+        return false;
+      }
+
+    } catch (error) {
+      console.warn('Ошибка инициализации сессии парсера:', error.message);
+      return false;
     }
   };
+
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   return (
     <Panel mode="secondary">
       {contextHolder}
-      <form
-        onSubmit={(e) => {
-          getValideData(e);
-        }}
-      >
+      <form onSubmit={handleLogin}>
         <Flex
           direction="column"
           gap={20}
@@ -50,23 +139,28 @@ export default function auth() {
               fontWeight: "bold",
             }}
           >
-            Войдите
+            Войдите в ЛК ГУАП
           </Label>
           <Input
             name="login"
             defaultValue=""
             mode="primary"
-            placeholder="Логин"
+            placeholder="Логин ГУАП"
             iconBefore={<Mail></Mail>}
+            disabled={loading}
           />
           <Input
             mode="primary"
             name="password"
+            type="password"
             defaultValue=""
-            placeholder="Пароль"
+            placeholder="Пароль ГУАП"
             iconBefore={<Lock></Lock>}
+            disabled={loading}
           />
-          <Button type="submit">Войти</Button>
+          <Button type="submit" loading={loading}>
+            Войти
+          </Button>
         </Flex>
       </form>
     </Panel>

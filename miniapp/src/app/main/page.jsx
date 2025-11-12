@@ -1,22 +1,89 @@
 "use client";
-import {
-  Button,
-  CellHeader,
-  CellList,
-  CellSimple,
-  Container,
-  Dot,
-  EllipsisText,
-  Flex,
-  Panel,
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { 
+  Button, 
+  CellHeader, 
+  CellList, 
+  CellSimple, 
+  Container, 
+  Dot, 
+  EllipsisText, 
+  Flex, 
+  Panel 
 } from "@maxhub/max-ui";
-import { Badge, Divider, Steps, Tag } from "antd";
-import React from "react";
+import { Badge, Divider, Steps, Tag, message } from "antd";
+import { clientSupabase as supabase } from "../../../lib/supabase-client";
+
 export default function MainPage() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const [messageApi, contextHolder] = message.useMessage();
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error || !session) {
+        console.log('❌ Нет активной сессии');
+        router.push('/auth');
+        return;
+      }
+
+      setUser(session.user);
+
+    } catch (error) {
+      console.error('Auth check error:', error);
+      messageApi.error('Ошибка авторизации');
+      router.push('/auth');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+const handleLogout = async () => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      const username = session.user.user_metadata?.original_username || session.user.user_metadata?.username;
+      
+      // Закрываем сессию парсера
+      if (username) {
+        await fetch('http://localhost:3001/api/logout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username }),
+        });
+      }
+    }
+
+    // Выходим из Supabase
+    await supabase.auth.signOut();
+    
+    // Очищаем пароль из localStorage
+    localStorage.removeItem('guap_password');
+    
+    router.push('/');
+  } catch (error) {
+    console.error('Logout error:', error);
+    messageApi.error('Ошибка при выходе');
+  }
+};
+
   return (
     <Panel mode="secondary" className="wrap">
+      {contextHolder}
       <Flex direction="column" align="stretch" gap={5}>
         <Container>
+          <Flex justify="end" style={{ marginBottom: '10px' }}>
+            <Button onClick={handleLogout}>Выйти</Button>
+          </Flex>
+
           <CellList
             filled
             mode="island"

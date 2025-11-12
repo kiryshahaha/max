@@ -37,15 +37,18 @@ process.on('SIGTERM', async () => {
 app.post('/api/logout', async (req, res) => {
   try {
     const { username } = req.body;
-    const userId = username;
     
-    const session = SessionManager.sessions.get(userId);
-    if (session) {
-      await session.page.close();
-      SessionManager.sessions.delete(userId);
+    if (username) {
+      const session = SessionManager.sessions.get(username);
+      if (session) {
+        await session.page.close();
+        await session.browser.close();
+        SessionManager.sessions.delete(username);
+        console.log(`✅ Сессия парсера закрыта для: ${username}`);
+      }
     }
     
-    res.json({ success: true, message: '✅ Сессия завершена' });
+    res.json({ success: true, message: '✅ Сессии завершены' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -63,6 +66,111 @@ app.get('/api/sessions', (req, res) => {
     activeSessions: SessionManager.sessions.size,
     sessions: sessionsInfo
   });
+});
+
+app.get('/api/sessions/stats', (req, res) => {
+  const stats = SessionManager.getSessionStats();
+  res.json({
+    success: true,
+    stats,
+    sessions: Array.from(SessionManager.sessions.entries()).map(([username, session]) => ({
+      username,
+      createdAt: new Date(session.createdAt).toISOString(),
+      lastActivity: new Date(session.lastActivity).toISOString(),
+      age: Date.now() - session.createdAt,
+      isValid: SessionManager.isSessionValid(session)
+    }))
+  });
+});
+
+app.post('/api/scrape/init-session', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({
+        success: false,
+        message: '❌ Укажите логин и пароль'
+      });
+    }
+
+    console.log(`🔐 Инициализация сессии для пользователя: ${username}`);
+    
+    // Сначала проверяем существующую сессию
+    const sessionActive = await SessionManager.isSessionActive(username);
+    
+    if (sessionActive) {
+      return res.json({
+        success: true,
+        message: '✅ Используется существующая сессия',
+        sessionActive: true,
+        sessionId: username
+      });
+    }
+
+    // Если сессии нет или она невалидна - создаем новую
+    const result = await SessionManager.createSession(username, password);
+    
+    if (result.success) {
+      res.json({
+        success: true,
+        message: '✅ Сессия парсера инициализирована',
+        sessionActive: true,
+        sessionId: username
+      });
+    } else {
+      res.status(401).json({
+        success: false,
+        message: result.message || '❌ Ошибка авторизации в ЛК ГУАП'
+      });
+    }
+
+  } catch (error) {
+    console.error('Ошибка инициализации сессии:', error);
+    res.status(500).json({
+      success: false,
+      message: `❌ Ошибка инициализации сессии: ${error.message}`
+    });
+  }
+});
+
+// Эндпоинт для проверки существующей сессии
+app.post('/api/scrape/check-session', async (req, res) => {
+  try {
+    const { username } = req.body;
+
+    if (!username) {
+      return res.status(400).json({
+        success: false,
+        message: '❌ Укажите логин'
+      });
+    }
+
+    console.log(`🔍 Проверка сессии для пользователя: ${username}`);
+    
+    const sessionActive = await SessionManager.isSessionActive(username);
+    
+    if (sessionActive) {
+      return res.json({
+        success: true,
+        message: '✅ Активная сессия найдена',
+        sessionActive: true
+      });
+    } else {
+      return res.json({
+        success: true,
+        message: '❌ Сессия не найдена или устарела',
+        sessionActive: false
+      });
+    }
+
+  } catch (error) {
+    console.error('Ошибка проверки сессии:', error);
+    res.status(500).json({
+      success: false,
+      message: `❌ Ошибка проверки сессии: ${error.message}`
+    });
+  }
 });
 
 // Эндпоинт для расписания на день
