@@ -64,6 +64,10 @@ const handleLogout = async () => {
 
     // Выходим из Supabase
     await supabase.auth.signOut();
+    
+    // Очищаем пароль из localStorage
+    localStorage.removeItem('guap_password');
+    
     router.push('/');
   } catch (error) {
     console.error('Logout error:', error);
