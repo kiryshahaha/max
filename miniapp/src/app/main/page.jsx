@@ -27,121 +27,150 @@ export default function MainPage() {
     checkAuth();
   }, []);
 
-  const checkAuth = async () => {
-    try {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (error || !session) {
-        console.log('❌ Нет активной сессии');
-        router.push('/auth');
-        return;
-      }
-
-      setUser(session.user);
-      await fetchTodaySchedule(session.user.id);
-
-    } catch (error) {
-      console.error('Auth check error:', error);
-      messageApi.error('Ошибка авторизации');
+const checkAuth = async () => {
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (error || !session) {
+      console.log('❌ Нет активной сессии');
       router.push('/auth');
-    } finally {
-      setLoading(false);
+      return;
     }
-  };
 
-  const fetchTodaySchedule = async (userId) => {
-    try {
-      setScheduleLoading(true);
-      console.log('📅 Запрашиваем расписание для пользователя:', userId);
+    setUser(session.user);
+    
+    // Передаем ID пользователя явно
+    await fetchTodaySchedule(session.user.id);
 
-      // 1. Сначала проверяем бэкенд
-      const backendResponse = await fetch(`http://127.0.0.1:8000/schedule/today?uid=${userId}`);
-      
-      if (!backendResponse.ok) {
-        throw new Error(`Backend error: ${backendResponse.status}`);
-      }
+  } catch (error) {
+    console.error('Auth check error:', error);
+    messageApi.error('Ошибка авторизации');
+    router.push('/auth');
+  } finally {
+    setLoading(false);
+  }
+};
 
-      const backendData = await backendResponse.json();
-      console.log('📊 Ответ от бэкенда:', backendData);
 
-      const currentDate = new Date().toISOString().split('T')[0];
+const fetchTodaySchedule = async (userId) => {
+  try {
+    setScheduleLoading(true);
+    console.log('📅 Запрашиваем расписание для пользователя:', userId);
 
-      // 2. Проверяем условия для обращения к парсеру
-      if (
-        !backendData.success || 
-        !backendData.schedule || 
-        backendData.schedule.schedule.length === 0 || 
-        backendData.schedule.date !== currentDate
-      ) {
-        console.log('🔄 Обращаемся к парсеру для получения актуального расписания');
-        await fetchFromParser(userId, currentDate);
-      } else {
-        // 3. Используем данные из бэкенда
-        console.log('✅ Используем актуальное расписание из бэкенда');
-        setTodaySchedule(backendData.schedule);
-      }
-
-    } catch (error) {
-      console.error('❌ Ошибка получения расписания:', error);
-      messageApi.error('Ошибка загрузки расписания');
-    } finally {
-      setScheduleLoading(false);
+    // 1. Сначала проверяем бэкенд
+    const backendResponse = await fetch(`http://127.0.0.1:8000/schedule/today?uid=${userId}`);
+    
+    if (!backendResponse.ok) {
+      throw new Error(`Backend error: ${backendResponse.status}`);
     }
-  };
 
-  const fetchFromParser = async (userId, currentDate) => {
-    try {
-      const username = user?.user_metadata?.original_username || user?.user_metadata?.username;
-      const password = localStorage.getItem('guap_password');
+    const backendData = await backendResponse.json();
+    console.log('📊 Ответ от бэкенда:', backendData);
 
-      if (!username || !password) {
-        messageApi.error('Данные для авторизации не найдены');
-        return;
-      }
+    const currentDate = new Date().toISOString().split('T')[0];
 
-      console.log('🚀 Отправляем запрос к парсеру:', { username, date: currentDate });
+    // 2. Проверяем наличие расписания и его содержимое
+    const hasValidSchedule = backendData.success && 
+                            backendData.schedule && 
+                            backendData.schedule.date === currentDate &&
+                            Array.isArray(backendData.schedule.schedule) &&
+                            backendData.schedule.schedule.length > 0; // Ключевое изменение - проверяем что массив не пустой
 
-      const parserResponse = await fetch('/api/post-daily-schedule', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username,
-          password,
-          date: currentDate,
-          saveToDatabase: true
-        }),
-      });
+    console.log('🔍 Детальная проверка данных:', {
+      success: backendData.success,
+      hasSchedule: !!backendData.schedule,
+      scheduleDate: backendData.schedule?.date,
+      currentDate,
+      hasScheduleArray: Array.isArray(backendData.schedule?.schedule),
+      scheduleLength: backendData.schedule?.schedule?.length,
+      hasValidSchedule
+    });
 
-      if (!parserResponse.ok) {
-        throw new Error(`Parser error: ${parserResponse.status}`);
-      }
-
-      const parserData = await parserResponse.json();
-      console.log('📊 Ответ от парсера:', parserData);
-
-      if (parserData.success) {
-        // Создаем объект расписания в формате бэкенда
-        const scheduleObj = {
-          date: currentDate,
-          date_dd_mm: `${String(new Date().getDate()).padStart(2, '0')}.${String(new Date().getMonth() + 1).padStart(2, '0')}`,
-          day_name: ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'][new Date().getDay()],
-          day_of_week: new Date().getDay(),
-          schedule: parserData.schedule || []
-        };
-
-        setTodaySchedule(scheduleObj);
-        messageApi.success('Расписание обновлено');
-      } else {
-        messageApi.error(parserData.message || 'Ошибка получения расписания');
-      }
-
-    } catch (error) {
-      console.error('❌ Ошибка парсера:', error);
-      messageApi.error('Ошибка обновления расписания');
+    // 3. Если расписание есть и оно не пустое - используем его, иначе обращаемся к парсеру
+    if (hasValidSchedule) {
+      console.log('✅ Используем актуальное расписание из бэкенда');
+      setTodaySchedule(backendData.schedule);
+    } else {
+      console.log('🔄 Обращаемся к парсеру - расписание отсутствует или пустое');
+      await fetchFromParser(userId, currentDate);
     }
-  };
+
+  } catch (error) {
+    console.error('❌ Ошибка получения расписания:', error);
+    messageApi.error('Ошибка загрузки расписания');
+  } finally {
+    setScheduleLoading(false);
+  }
+};
+
+ const fetchFromParser = async (userId, currentDate) => {
+  try {
+    // Получаем актуальные данные пользователя из сессии
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      messageApi.error('Сессия не найдена');
+      return;
+    }
+
+    const username = session.user.user_metadata?.original_username || session.user.user_metadata?.username;
+    const password = localStorage.getItem('guap_password');
+
+    console.log('🔐 Данные для парсера:', { 
+      username, 
+      passwordExists: !!password,
+      userId 
+    });
+
+    if (!username || !password) {
+      console.error('❌ Отсутствуют данные для авторизации:', { username, passwordExists: !!password });
+      messageApi.error('Данные для авторизации не найдены');
+      return;
+    }
+
+    console.log('🚀 Отправляем запрос к парсеру:', { username, date: currentDate });
+
+    const parserResponse = await fetch('/api/post-daily-schedule', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username,
+        password,
+        date: currentDate,
+        saveToDatabase: true
+      }),
+    });
+
+    if (!parserResponse.ok) {
+      const errorText = await parserResponse.text();
+      throw new Error(`Parser error: ${parserResponse.status} - ${errorText}`);
+    }
+
+    const parserData = await parserResponse.json();
+    console.log('📊 Ответ от парсера:', parserData);
+
+    if (parserData.success) {
+      // Создаем объект расписания в формате бэкенда
+      const scheduleObj = {
+        date: currentDate,
+        date_dd_mm: `${String(new Date().getDate()).padStart(2, '0')}.${String(new Date().getMonth() + 1).padStart(2, '0')}`,
+        day_name: ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'][new Date().getDay()],
+        day_of_week: new Date().getDay(),
+        schedule: parserData.schedule || []
+      };
+
+      setTodaySchedule(scheduleObj);
+      messageApi.success('Расписание обновлено');
+    } else {
+      messageApi.error(parserData.message || 'Ошибка получения расписания');
+    }
+
+  } catch (error) {
+    console.error('❌ Ошибка парсера:', error);
+    messageApi.error('Ошибка обновления расписания');
+  }
+};
 
   const handleLogout = async () => {
     try {
@@ -168,15 +197,15 @@ export default function MainPage() {
   };
 
   const formatScheduleForSteps = (schedule) => {
-    if (!schedule || !schedule.schedule) return [];
+  if (!schedule || !schedule.schedule || schedule.schedule.length === 0) return [];
 
-    return schedule.schedule.map((classItem, index) => ({
-      title: classItem.subject || 'Не указано',
-      description: `${classItem.timeRange || ''}${classItem.building ? `, ${classItem.building}` : ''}${classItem.location ? `, ${classItem.location}` : ''}`,
-      subTitle: classItem.type || '',
-      status: "wait" // Можно добавить логику для определения статуса
-    }));
-  };
+  return schedule.schedule.map((classItem, index) => ({
+    title: classItem.subject || 'Не указано',
+    description: `${classItem.timeRange || ''}${classItem.building ? `, ${classItem.building}` : ''}${classItem.location ? `, ${classItem.location}` : ''}`,
+    subTitle: classItem.type || '',
+    status: "wait"
+  }));
+};
 
   return (
     <Panel mode="secondary" className="wrap">
