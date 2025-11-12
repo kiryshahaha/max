@@ -67,9 +67,49 @@ class SupabaseClient:
         return {}
 
     def get_today_schedule_by_uid(self, uid: str):
-        """Получаем расписание на сегодня из week_schedule"""
+        """Получаем расписание на сегодня из колонки today_schedule"""
+        user_data = self.get_user_data_by_uid(uid)
+        
+        # Базовый результат
+        result = {
+            "date": datetime.now().strftime("%Y-%m-%d"),
+            "date_dd_mm": datetime.now().strftime("%d.%m"),
+            "day_name": ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'][datetime.now().weekday()],
+            "day_of_week": datetime.now().weekday(),
+            "schedule": []
+        }
+        
+        if user_data and 'today_schedule' in user_data:
+            today_schedule = user_data['today_schedule']
+            
+            if isinstance(today_schedule, list):
+                # Форматируем занятия для единообразия
+                formatted_classes = []
+                for class_item in today_schedule:
+                    if isinstance(class_item, dict):
+                        formatted_class = {
+                            "type": class_item.get('type', ''),
+                            "group": class_item.get('group', ''),
+                            "subject": class_item.get('subject', ''),
+                            "teacher": class_item.get('teacher', ''),
+                            "building": class_item.get('building', ''),
+                            "location": class_item.get('location', ''),
+                            "timeRange": class_item.get('timeRange', ''),
+                            "pairNumber": class_item.get('pairNumber', ''),
+                            "teacherInfo": class_item.get('teacherInfo', '')
+                        }
+                        formatted_classes.append(formatted_class)
+                
+                result["schedule"] = formatted_classes
+                print(f"✅ Found {len(formatted_classes)} classes in today_schedule for UID: {uid}")
+                return result
+            else:
+                print(f"❌ today_schedule is not a list for UID: {uid}")
+        
+        print(f"❌ No today_schedule found for UID: {uid}, falling back to week_schedule")
+        # Если today_schedule нет, используем старую логику из week_schedule
         schedule = self.get_schedule_by_uid(uid)
-        return self._extract_day_schedule(schedule, 0)  # Сегодня
+        return self._extract_day_schedule(schedule, 0) # Сегодня
 
     def get_tomorrow_schedule_by_uid(self, uid: str):
         """Получаем расписание на завтра из week_schedule"""
