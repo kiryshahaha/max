@@ -2,19 +2,16 @@
 import { getAdminSupabase } from "../../lib/supabase-client";
 
 export const scheduleService = {
-  async saveUserSchedule(userId, scheduleData, scheduleType, dateParams = null, shouldSave = false) {
+  async saveUserSchedule(userId, scheduleData, scheduleType, dateParams = null, shouldSave = true) {
     try {
- const adminSupabase = getAdminSupabase();
+      const adminSupabase = getAdminSupabase();
 
-      console.log('💾 Начинаем сохранение расписания для пользователя:', userId);
+      console.log('💾 Сохраняем расписание в БД для пользователя:', userId);
       console.log('📅 Тип расписания:', scheduleType);
-      console.log('💾 Сохранять в БД:', shouldSave);
-      
-      // Если не нужно сохранять в БД, просто возвращаем результат
-      if (!shouldSave) {
-        console.log('📋 Расписание не сохраняется в БД (пользователь не выбрал сохранение)');
-        return { savedToDatabase: false, message: 'Расписание не требует сохранения в БД' };
-      }
+      console.log('📊 Количество занятий:', scheduleData?.length || 0);
+
+      // Убираем проверку на shouldSave - всегда сохраняем
+      console.log('💾 Автоматическое сохранение в БД при обращении к парсеру');
 
       const currentDate = new Date();
       const updateData = {
@@ -25,21 +22,21 @@ export const scheduleService = {
       if (scheduleType === 'week') {
         const currentWeek = this.getWeekNumber(currentDate);
         const currentYear = currentDate.getFullYear();
-        
+
         console.log('✅ Сохраняем расписание для текущей недели:', currentWeek);
-        
+
         updateData.week_schedule = scheduleData;
         // Не сохраняем week_number и week_year - используем системные даты
 
       } else if (scheduleType === 'today') {
         const todayString = currentDate.toISOString().split('T')[0];
-        
+
         console.log('✅ Сохраняем расписание на сегодня:', todayString);
-        
+
         updateData.today_schedule = scheduleData;
         // Не сохраняем today_date - используем системную дату
       }
-      
+
       console.log('🔍 Проверяем существующую запись...');
       const { data: existingData, error: selectError } = await adminSupabase
         .from('user_data')
@@ -55,7 +52,7 @@ export const scheduleService = {
       console.log('📊 Существующая запись:', existingData ? 'найдена' : 'не найдена');
 
       let result;
-      
+
       if (existingData) {
         console.log('🔄 Обновляем расписание...');
         const { data, error } = await adminSupabase
@@ -90,7 +87,7 @@ export const scheduleService = {
 
       console.log('💾 Результат сохранения расписания:', result);
       return { savedToDatabase: true, data: result };
-      
+
     } catch (error) {
       console.error('❌ Ошибка сохранения расписания:', error);
       throw error;
@@ -100,10 +97,10 @@ export const scheduleService = {
   async getUserSchedule(userId, scheduleType) {
     try {
 
-       const adminSupabase = getAdminSupabase();
+      const adminSupabase = getAdminSupabase();
 
       let selectField;
-      
+
       if (scheduleType === 'today') {
         selectField = 'today_schedule';
       } else if (scheduleType === 'week') {
@@ -127,11 +124,11 @@ export const scheduleService = {
         console.log('📋 Расписание получено из БД');
         return data;
       }
-      
+
       // Если в БД нет данных
       console.log('📋 Расписание не найдено в БД');
       return null;
-      
+
     } catch (error) {
       console.error('❌ Ошибка получения расписания:', error);
       throw error;
@@ -141,7 +138,7 @@ export const scheduleService = {
   // Проверка актуальности расписания
   isScheduleActual(scheduleType, scheduleData = null) {
     const currentDate = new Date();
-    
+
     if (scheduleType === 'today') {
       // Для расписания на день проверяем, что оно вообще есть
       return scheduleData && scheduleData.today_schedule;
@@ -149,7 +146,7 @@ export const scheduleService = {
       // Для недельного расписания проверяем, что оно есть
       return scheduleData && scheduleData.week_schedule;
     }
-    
+
     return false;
   },
 
@@ -157,7 +154,7 @@ export const scheduleService = {
   async cleanupOldSchedules(userId) {
     try {
 
-       const adminSupabase = getAdminSupabase();
+      const adminSupabase = getAdminSupabase();
 
       const currentDate = new Date();
       const todayString = currentDate.toISOString().split('T')[0];
@@ -172,7 +169,7 @@ export const scheduleService = {
       if (userData) {
         const updateData = {};
         const scheduleUpdated = userData.schedule_updated_at ? new Date(userData.schedule_updated_at) : null;
-        
+
         // Очищаем today_schedule если оно старше 1 дня
         if (userData.today_schedule && scheduleUpdated) {
           const daysDiff = (currentDate - scheduleUpdated) / (1000 * 60 * 60 * 24);

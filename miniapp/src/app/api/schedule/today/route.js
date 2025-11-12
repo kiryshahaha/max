@@ -1,5 +1,5 @@
 // app/api/schedule/today/route.js
-import { getAdminSupabase } from "@/lib/supabase-client";
+import { getAdminSupabase } from "../../../../../lib/supabase-client";
 
 export async function GET(request) {
   try {
@@ -8,61 +8,68 @@ export async function GET(request) {
 
     if (!userId) {
       return Response.json({ 
-        success: false, 
-        message: '❌ UID пользователя обязателен' 
+        message: '❌ User ID is required',
+        success: false
       }, { status: 400 });
     }
 
-    const adminSupabase = getAdminSupabase();
+    console.log('📅 Запрашиваем расписание для пользователя:', userId);
+
+    // 1. Сначала проверяем бэкенд (как было в оригинальной логике)
+    const backendResponse = await fetch(`http://127.0.0.1:8000/schedule/today?uid=${userId}`);
+
+    if (!backendResponse.ok) {
+      throw new Error(`Backend error: ${backendResponse.status}`);
+    }
+
+    const backendData = await backendResponse.json();
+    console.log('📊 Ответ от бэкенда:', backendData);
+
     const currentDate = new Date().toISOString().split('T')[0];
-    
-    // Форматируем дату для отображения
-    const dateObj = new Date();
-    const dayNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
-    
-    const formattedData = {
-      date: currentDate,
-      date_dd_mm: `${String(dateObj.getDate()).padStart(2, '0')}.${String(dateObj.getMonth() + 1).padStart(2, '0')}`,
-      day_name: dayNames[dateObj.getDay()],
-      day_of_week: dateObj.getDay(),
-      schedule: []
-    };
 
-    // Получаем данные из БД
-    const { data: userData, error } = await adminSupabase
-      .from('user_data')
-      .select('today_schedule, today_date, schedule_updated_at')
-      .eq('user_id', userId)
-      .single();
+    // 2. УЛУЧШЕННАЯ ПРОВЕРКА: учитываем флаг has_schedule от бэкенда
+    const hasValidSchedule = backendData.success &&
+      backendData.schedule &&
+      backendData.schedule.date === currentDate &&
+      backendData.schedule.has_schedule !== false; // Ключевое изменение!
 
-    if (error && error.code !== 'PGRST116') {
-      console.error('❌ Ошибка получения расписания:', error);
-      throw error;
-    }
-
-    // Проверяем актуальность расписания
-    if (userData && userData.today_date === currentDate && userData.today_schedule) {
-      formattedData.schedule = userData.today_schedule;
-      console.log('✅ Используем актуальное расписание из БД');
-    } else {
-      console.log('📋 Расписание не найдено или неактуально');
-      if (userData && userData.today_date !== currentDate) {
-        console.log('📅 Дата расписания не совпадает с текущей');
-      }
-    }
-
-    return Response.json({
-      success: true,
-      uid: userId,
-      schedule: formattedData
+    console.log('🔍 Детальная проверка данных:', {
+      success: backendData.success,
+      hasSchedule: !!backendData.schedule,
+      scheduleDate: backendData.schedule?.date,
+      currentDate,
+      hasScheduleFlag: backendData.schedule?.has_schedule,
+      hasValidSchedule
     });
 
+    // 3. Если расписание есть и флаг has_schedule не false - используем его
+    if (hasValidSchedule) {
+      console.log('✅ Используем актуальное расписание из бэкенда');
+      console.log('   - Количество занятий:', backendData.schedule.schedule?.length || 0);
+      console.log('   - Флаг has_schedule:', backendData.schedule.has_schedule);
+      return Response.json({
+        success: true,
+        schedule: backendData.schedule,
+        source: 'backend'
+      });
+    } else {
+      console.log('🔄 Расписание отсутствует или устарело в бэкенде');
+      console.log('   - Причина:', !backendData.schedule ? 'Нет объекта schedule' : 
+        backendData.schedule.date !== currentDate ? 'Дата не совпадает' : 
+        'Флаг has_schedule = false');
+      return Response.json({
+        success: false,
+        message: 'Расписание не найдено в бэкенде',
+        schedule: null
+      });
+    }
+
   } catch (error) {
-    console.error('❌ API Error:', error);
+    console.error('❌ Schedule API Error:', error);
     return Response.json(
       { 
-        success: false,
-        message: `❌ Ошибка получения расписания: ${error.message}` 
+        message: `❌ Ошибка получения расписания: ${error.message}`,
+        success: false
       },
       { status: 500 }
     );
