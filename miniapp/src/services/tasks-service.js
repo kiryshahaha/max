@@ -1,8 +1,11 @@
-import { adminSupabase } from "../../lib/supabase-client";
+import { getAdminSupabase } from "../../lib/supabase-client";
 
 export const tasksService = {
   async saveUserTasks(userId, tasks) {
     try {
+      
+ const adminSupabase = getAdminSupabase();
+
       const tasksData = {
         tasks: tasks,
         updated_at: new Date().toISOString()

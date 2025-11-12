@@ -18,6 +18,8 @@ import { clientSupabase as supabase } from "../../../lib/supabase-client";
 export default function MainPage() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [todaySchedule, setTodaySchedule] = useState(null);
+  const [scheduleLoading, setScheduleLoading] = useState(false);
   const router = useRouter();
   const [messageApi, contextHolder] = message.useMessage();
 
@@ -36,6 +38,7 @@ export default function MainPage() {
       }
 
       setUser(session.user);
+      await fetchTodaySchedule(session.user.id);
 
     } catch (error) {
       console.error('Auth check error:', error);
@@ -46,34 +49,134 @@ export default function MainPage() {
     }
   };
 
-const handleLogout = async () => {
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      const username = session.user.user_metadata?.original_username || session.user.user_metadata?.username;
-      
-      // Закрываем сессию парсера
-      if (username) {
-        await fetch('http://localhost:3001/api/logout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username }),
-        });
-      }
-    }
+  const fetchTodaySchedule = async (userId) => {
+    try {
+      setScheduleLoading(true);
+      console.log('📅 Запрашиваем расписание для пользователя:', userId);
 
-    // Выходим из Supabase
-    await supabase.auth.signOut();
-    
-    // Очищаем пароль из localStorage
-    localStorage.removeItem('guap_password');
-    
-    router.push('/');
-  } catch (error) {
-    console.error('Logout error:', error);
-    messageApi.error('Ошибка при выходе');
-  }
-};
+      // 1. Сначала проверяем бэкенд
+      const backendResponse = await fetch(`http://127.0.0.1:8000/schedule/today?uid=${userId}`);
+      
+      if (!backendResponse.ok) {
+        throw new Error(`Backend error: ${backendResponse.status}`);
+      }
+
+      const backendData = await backendResponse.json();
+      console.log('📊 Ответ от бэкенда:', backendData);
+
+      const currentDate = new Date().toISOString().split('T')[0];
+
+      // 2. Проверяем условия для обращения к парсеру
+      if (
+        !backendData.success || 
+        !backendData.schedule || 
+        backendData.schedule.schedule.length === 0 || 
+        backendData.schedule.date !== currentDate
+      ) {
+        console.log('🔄 Обращаемся к парсеру для получения актуального расписания');
+        await fetchFromParser(userId, currentDate);
+      } else {
+        // 3. Используем данные из бэкенда
+        console.log('✅ Используем актуальное расписание из бэкенда');
+        setTodaySchedule(backendData.schedule);
+      }
+
+    } catch (error) {
+      console.error('❌ Ошибка получения расписания:', error);
+      messageApi.error('Ошибка загрузки расписания');
+    } finally {
+      setScheduleLoading(false);
+    }
+  };
+
+  const fetchFromParser = async (userId, currentDate) => {
+    try {
+      const username = user?.user_metadata?.original_username || user?.user_metadata?.username;
+      const password = localStorage.getItem('guap_password');
+
+      if (!username || !password) {
+        messageApi.error('Данные для авторизации не найдены');
+        return;
+      }
+
+      console.log('🚀 Отправляем запрос к парсеру:', { username, date: currentDate });
+
+      const parserResponse = await fetch('/api/post-daily-schedule', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username,
+          password,
+          date: currentDate,
+          saveToDatabase: true
+        }),
+      });
+
+      if (!parserResponse.ok) {
+        throw new Error(`Parser error: ${parserResponse.status}`);
+      }
+
+      const parserData = await parserResponse.json();
+      console.log('📊 Ответ от парсера:', parserData);
+
+      if (parserData.success) {
+        // Создаем объект расписания в формате бэкенда
+        const scheduleObj = {
+          date: currentDate,
+          date_dd_mm: `${String(new Date().getDate()).padStart(2, '0')}.${String(new Date().getMonth() + 1).padStart(2, '0')}`,
+          day_name: ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'][new Date().getDay()],
+          day_of_week: new Date().getDay(),
+          schedule: parserData.schedule || []
+        };
+
+        setTodaySchedule(scheduleObj);
+        messageApi.success('Расписание обновлено');
+      } else {
+        messageApi.error(parserData.message || 'Ошибка получения расписания');
+      }
+
+    } catch (error) {
+      console.error('❌ Ошибка парсера:', error);
+      messageApi.error('Ошибка обновления расписания');
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const username = session.user.user_metadata?.original_username || session.user.user_metadata?.username;
+        
+        if (username) {
+          await fetch('http://localhost:3001/api/logout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username }),
+          });
+        }
+      }
+
+      await supabase.auth.signOut();
+      localStorage.removeItem('guap_password');
+      router.push('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+      messageApi.error('Ошибка при выходе');
+    }
+  };
+
+  const formatScheduleForSteps = (schedule) => {
+    if (!schedule || !schedule.schedule) return [];
+
+    return schedule.schedule.map((classItem, index) => ({
+      title: classItem.subject || 'Не указано',
+      description: `${classItem.timeRange || ''}${classItem.building ? `, ${classItem.building}` : ''}${classItem.location ? `, ${classItem.location}` : ''}`,
+      subTitle: classItem.type || '',
+      status: "wait" // Можно добавить логику для определения статуса
+    }));
+  };
 
   return (
     <Panel mode="secondary" className="wrap">
@@ -84,6 +187,7 @@ const handleLogout = async () => {
             <Button onClick={handleLogout}>Выйти</Button>
           </Flex>
 
+          {/* Расписание на сегодня */}
           <CellList
             filled
             mode="island"
@@ -92,35 +196,35 @@ const handleLogout = async () => {
                 titleStyle="caps"
                 after={<Dot appearance="accent-red"></Dot>}
               >
-                Расписание на сегодня
+                Расписание на сегодня {todaySchedule?.date_dd_mm}
               </CellHeader>
             }
           >
-            <CellSimple showChevron onClick={() => {}}>
-              <Steps
-                direction="vertical"
-                percent={60}
-                items={[
-                  {
-                    title: "Математика",
-                    status: "finish",
-                    subTitle: "2",
-                    description: "09:00 — 10:30, Ауд. 205",
-                  },
-                  {
-                    title: "Физика",
-                    status: "process",
-                    description: "11:00 — 12:30, Ауд. 210",
-                  },
-                  {
-                    title: "Программирование",
-                    description: "13:00 — 14:30, Ауд. 302",
-                  },
-                ]}
-              />
-            </CellSimple>
+            {scheduleLoading ? (
+              <CellSimple>Загрузка расписания...</CellSimple>
+            ) : todaySchedule && todaySchedule.schedule.length > 0 ? (
+              <CellSimple showChevron>
+                <Steps
+                  direction="vertical"
+                  items={formatScheduleForSteps(todaySchedule)}
+                />
+              </CellSimple>
+            ) : (
+              <CellSimple>
+                На сегодня занятий нет
+                <Button 
+                  type="link" 
+                  onClick={() => fetchTodaySchedule(user?.id)}
+                  style={{ marginTop: '10px' }}
+                >
+                  Обновить
+                </Button>
+              </CellSimple>
+            )}
           </CellList>
         </Container>
+
+        <Divider></Divider>
 
         <Divider></Divider>
 

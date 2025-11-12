@@ -1,9 +1,11 @@
 // services/schedule-service.js
-import { adminSupabase } from "../../lib/supabase-client";
+import { getAdminSupabase } from "../../lib/supabase-client";
 
 export const scheduleService = {
   async saveUserSchedule(userId, scheduleData, scheduleType, dateParams = null, shouldSave = false) {
     try {
+ const adminSupabase = getAdminSupabase();
+
       console.log('💾 Начинаем сохранение расписания для пользователя:', userId);
       console.log('📅 Тип расписания:', scheduleType);
       console.log('💾 Сохранять в БД:', shouldSave);
@@ -97,6 +99,9 @@ export const scheduleService = {
 
   async getUserSchedule(userId, scheduleType) {
     try {
+
+       const adminSupabase = getAdminSupabase();
+
       let selectField;
       
       if (scheduleType === 'today') {
@@ -151,6 +156,9 @@ export const scheduleService = {
   // Очистка устаревших расписаний - УПРОЩЕННАЯ ВЕРСИЯ
   async cleanupOldSchedules(userId) {
     try {
+
+       const adminSupabase = getAdminSupabase();
+
       const currentDate = new Date();
       const todayString = currentDate.toISOString().split('T')[0];
 
