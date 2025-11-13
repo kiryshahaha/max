@@ -108,36 +108,35 @@ export default function Auth() {
   };
 
   const initializeParserSession = async (username, password) => {
-    try {
-      const parserUrl = process.env.PARSER_SERVICE_URL;
-      const response = await fetch(`${parserUrl}/api/scrape/init-session`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      });
+  try {
+    const response = await fetch('/api/parser/init-session', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, password }),
+    });
 
-      if (!response.ok) {
-        console.warn('Парсер-сервис недоступен');
-        return false;
-      }
-
-      const result = await response.json();
-      
-      if (result.success && result.sessionActive) {
-        console.log('✅ Сессия парсера инициализирована');
-        return true;
-      } else {
-        console.warn('❌ Ошибка инициализации сессии парсера:', result.message);
-        return false;
-      }
-
-    } catch (error) {
-      console.warn('Ошибка инициализации сессии парсера:', error.message);
+    if (!response.ok) {
+      console.warn('Парсер-сервис недоступен');
       return false;
     }
-  };
+
+    const result = await response.json();
+    
+    if (result.success && result.sessionActive) {
+      console.log('✅ Сессия парсера инициализирована');
+      return true;
+    } else {
+      console.warn('❌ Ошибка инициализации сессии парсера:', result.message);
+      return false;
+    }
+
+  } catch (error) {
+    console.warn('Ошибка инициализации сессии парсера:', error.message);
+    return false;
+  }
+};
 
   const isValidEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
