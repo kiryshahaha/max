@@ -796,7 +796,7 @@ export default function MainPage() {
               <CellSimple><Spinner /></CellSimple>
             ) : todaySchedule ? (
               todaySchedule.schedule.length > 0 ? (
-                <CellSimple showChevron>
+                <CellSimple showChevron onClick={() => router.push('/schedule/week')}>
                   <Steps
                     direction="vertical"
                     items={formatScheduleForSteps(todaySchedule)}

@@ -25,13 +25,26 @@ export const scheduleService = {
       };
 
       // Для недельного расписания
-      if (scheduleType === 'week') {
+ if (scheduleType === 'week') {
         const currentWeek = this.getWeekNumber(currentDate);
         const currentYear = currentDate.getFullYear();
 
         console.log('✅ Сохраняем расписание для текущей недели:', currentWeek);
 
-        updateData.week_schedule = scheduleData;
+        // ФИКС: Сохраняем номер недели и год в метаданных
+        updateData.week_schedule = {
+          ...scheduleData,
+          metadata: {
+            week_number: currentWeek,
+            year: currentYear,
+            is_even_week: isEvenWeek,
+            schedule_updated_at: currentDate.toISOString()
+          }
+        };
+
+        // ФИКС: Добавляем отдельные поля для быстрого доступа
+        updateData.current_week_number = currentWeek;
+        updateData.current_week_year = currentYear;
 
       } else if (scheduleType === 'today') {
         console.log('✅ Сохраняем расписание на сегодня:', todayString);
@@ -195,8 +208,13 @@ export const scheduleService = {
         return metadata.system_date === todayString;
       }
       return false;
-    } else if (scheduleType === 'week') {
-      return scheduleData.week_schedule;
+     } else if (scheduleType === 'week') {
+      // ФИКС: Проверяем метаданные внутри week_schedule
+      if (scheduleData.week_schedule && scheduleData.week_schedule.metadata) {
+        const metadata = scheduleData.week_schedule.metadata;
+        return metadata.week_number === currentWeek;
+      }
+      return false;
     }
 
     return false;
@@ -230,11 +248,11 @@ export const scheduleService = {
         }
 
         // Очищаем week_schedule если оно старше 1 недели
-        const scheduleUpdated = userData.schedule_updated_at ? new Date(userData.schedule_updated_at) : null;
-        if (userData.week_schedule && scheduleUpdated) {
-          const daysDiff = (currentDate - scheduleUpdated) / (1000 * 60 * 60 * 24);
-          if (daysDiff > 7) {
+          if (userData.week_schedule && userData.week_schedule.metadata) {
+          if (userData.week_schedule.metadata.week_number !== currentWeek) {
             updateData.week_schedule = null;
+            updateData.current_week_number = null;
+            updateData.current_week_year = null;
             console.log('🧹 Очищено устаревшее расписание на неделю');
           }
         }

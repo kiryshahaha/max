@@ -184,13 +184,19 @@ class SupabaseClient:
         if not schedule or not isinstance(schedule, dict):
             return {}
         
-        # Возвращаем всю структуру week_schedule
+        # ФИКС: Извлекаем номер недели из метаданных
+        week_number = schedule.get('metadata', {}).get('week_number')
+        year = schedule.get('metadata', {}).get('year')
+        
+        # Возвращаем всю структуру week_schedule с метаданными
         return {
             "success": True,
-            "week": week,
+            "week": week_number if week_number else week,
+            "year": year,
             "schedule": schedule,
             "total_days": len(schedule.get('days', [])),
-            "total_extra_classes": len(schedule.get('extraClasses', []))
+            "total_extra_classes": len(schedule.get('extraClasses', [])),
+            "metadata": schedule.get('metadata', {})
         }
 
     def get_extra_classes_by_uid(self, uid: str):
