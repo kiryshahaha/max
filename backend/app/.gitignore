@@ -1,0 +1,32 @@
+@"
+# Корневые зависимости
+/node_modules
+
+# Next.js
+/.next/
+/out/
+
+/backend/app/myenv/
+
+# Production
+/build
+/dist
+
+# Environment files
+.env.local
+.env.production
+
+# Logs
+*.log
+
+# System files
+.DS_Store
+*.tmp
+
+# IDE
+.vscode/
+.idea/
+
+# Coverage
+/coverage
+"@ | Out-File -FilePath .gitignore -Encoding UTF8

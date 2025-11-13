@@ -35,7 +35,7 @@ services:
     networks:
       - maxnet
     env_file:
-      - ../miniapp/.env
+      - ../miniapp/.env.docker
 
   parser:
     build:
