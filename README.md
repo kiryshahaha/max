@@ -1,4 +1,4 @@
-# GUAP Student Portal Backend API
+# GUAP Student Portal API
 
 FastAPI бэкенд для студенческого портала ГУАП с интеграцией данных через парсер ЛК.
 
