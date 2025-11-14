@@ -15,6 +15,6 @@ ENV NEXT_DISABLE_BUILD_INDICATOR=true
 RUN npm run build
 
 # Next.js по умолчанию использует порт 3000, а не 5173
-EXPOSE 3000
+EXPOSE 5173
 
 CMD ["npm", "start"]
