@@ -134,85 +134,70 @@ export default function UniversityDashboard() {
 
   // Основные метрики для главного экрана
   const KeyMetricsCard = () => (
-    // <Flex direction="column">
-    //     <Typography.Headline variant="medium-strong">
-    //       Ключевые показатели
-    //     </Typography.Headline>
+
 
     <CellList 
     mode="island"
     header={<CellHeader>Ключевые показатели</CellHeader>}
     >
       <CellSimple
-        // height="compact"
+          height="normal"
         title="Всего студентов"
         subtitle={formatNumber(universityData.key_metrics.total_students)}
       />
       <CellSimple
-        // height="compact"
+          height="normal"
         title="Преподавателей"
         subtitle={formatNumber(universityData.key_metrics.academic_staff)}
       />
       <CellSimple
-        height="compact"
+          height="normal"
         title="Выпускников в год"
         subtitle={formatNumber(universityData.key_metrics.annual_graduates)}
       />
       <CellSimple
-        height="compact"
+          height="normal"
         title="Образовательных программ"
         subtitle={formatNumber(universityData.key_metrics.educational_programs)}
       />
     </CellList>
-    // </Flex>
   );
 
   // Карточка качества образования
   const QualityMetricsCard = () => (
-    // <Panel mode="island">
-    //   <Flex direction="column" gap={16}>
-    //     <Typography.Headline variant="medium-strong">
-    //       Качество образования
-    //     </Typography.Headline>
-    //     <Flex gap={12}>
+
 
     <CellList 
     mode="island"
     header={<CellHeader>Качество образования</CellHeader>}
     >
       <CellSimple
-        height="compact"
+          height="normal"
         title="Средний балл ЕГЭ"
         subtitle={universityData.performance_metrics.average_exam_score}
       />
       <CellSimple
-        height="compact"
+          height="normal"
         title="Успеваемость"
         subtitle={formatPercentage(universityData.performance_metrics.academic_performance)}
       />
       <CellSimple
-        height="compact"
+          height="normal"
         title="Трудоустройство"
         subtitle={formatPercentage(universityData.performance_metrics.employment_rate)}
       />
       <CellSimple
-        height="compact"
+          height="normal"
         title="Трудоустройство по профилю"
         subtitle={formatPercentage(universityData.performance_metrics.relevant_employment)}
       />
     </CellList>
-    //     </Flex>
-    //   </Flex>
-    // </Panel>
+
   );
 
   // Список институтов
   const InstitutesList = () => (
-    // <Panel mode="island">
-    //   <Flex direction="column" gap={16}>
-    //     <Typography.Headline variant="medium-strong">
-    //       Институты и факультеты
-    //     </Typography.Headline>
+
 
     <CellList
       mode="island"
@@ -221,7 +206,7 @@ export default function UniversityDashboard() {
       {universityData.institutes.map((institute, index) => (
         <CellSimple
           key={index}
-          height="compact"
+          height="normal"
           title={institute.name}
           subtitle={`${formatNumber(institute.students)} студентов · Рост ${institute.growth}%`}
           after={
@@ -229,16 +214,13 @@ export default function UniversityDashboard() {
               {institute.average_score && (
                 <Counter value={institute.average_score} rounded />
               )}
-              {institute.employment_rate && (
-                <Dot color="positive" />
-              )}
+                {/* <Dot color="positive" /> */}
             </Flex>
           }
         />
       ))}
     </CellList>
-    //   </Flex>
-    // </Panel>
+
   );
 
   // Распределение студентов
@@ -249,22 +231,22 @@ export default function UniversityDashboard() {
       header={<CellHeader>Распределение студентов</CellHeader>}
     >
       <CellSimple
-        height="compact"
+          height="normal"
         title="Бакалавриат/Специалитет"
         subtitle={formatNumber(universityData.student_distribution.bachelor_specialty)}
       />
       <CellSimple
-        height="compact"
+          height="normal"
         title="Магистратура"
         subtitle={formatNumber(universityData.student_distribution.masters)}
       />
       <CellSimple
-        height="compact"
+          height="normal"
         title="Очная форма"
         subtitle={formatNumber(universityData.student_distribution.full_time)}
       />
       <CellSimple
-        height="compact"
+          height="normal"
         title="Заочная/Очно-заочная"
         subtitle={formatNumber(universityData.student_distribution.part_time)}
       />
@@ -279,24 +261,25 @@ export default function UniversityDashboard() {
     <CellList
       mode="island"
       header={<CellHeader>Международные студенты</CellHeader>}
+
     >
       <CellSimple
-        height="compact"
+          height="normal"
         title="Всего иностранных студентов"
         subtitle={formatNumber(universityData.international_students.total)}
       />
       <CellSimple
-        height="compact"
+          height="normal"
         title="Доля от общего числа"
         subtitle={formatPercentage(universityData.international_students.percentage)}
       />
       <CellSimple
-        height="compact"
+          height="normal"
         title="Страны СНГ"
         subtitle={formatPercentage(universityData.international_students.cis_countries)}
       />
       <CellSimple
-        height="compact"
+          height="normal"
         title="Страны Азии"
         subtitle={formatPercentage(universityData.international_students.asia)}
       />
@@ -314,36 +297,33 @@ export default function UniversityDashboard() {
     >
 
       <CellSimple
-        height="compact"
+          height="normal"
         title="Студентов с академической задолженностью"
         subtitle={`${formatNumber(universityData.problem_areas.academic_debt_students)} (${formatPercentage(universityData.problem_areas.debt_percentage)})`}
       />
 
-      {/* <Typography.Body variant="small-strong">
-          Распределение по курсам:
-        </Typography.Body> */}
-      {/* <Grid columns={2} gap={12}> */}
+
       <CellList
         header={<CellHeader>Распределение по курсам</CellHeader>}
       >
         <Grid cols={2} rows={2}>
           <CellSimple
-            height="compact"
+          height="normal"
             title="1 курс"
             subtitle={formatPercentage(universityData.problem_areas.debt_by_year.first_year)}
           />
           <CellSimple
-            height="compact"
+          height="normal"
             title="2 курс"
             subtitle={formatPercentage(universityData.problem_areas.debt_by_year.second_year)}
           />
           <CellSimple
-            height="compact"
+          height="normal"
             title="3 курс"
             subtitle={formatPercentage(universityData.problem_areas.debt_by_year.third_year)}
           />
           <CellSimple
-            height="compact"
+          height="normal"
             title="4+ курс"
             subtitle={formatPercentage(universityData.problem_areas.debt_by_year.fourth_plus_year)}
           />
@@ -369,7 +349,7 @@ export default function UniversityDashboard() {
         header={<CellHeader>Целевой прием</CellHeader>}
       >
         <CellSimple
-          height="compact"
+          height="normal"
           title="Доля целевиков от КЦП"
           subtitle={formatPercentage(universityData.target_admission.percentage)}
         />
@@ -386,7 +366,7 @@ export default function UniversityDashboard() {
           {universityData.target_admission.partners.map((partner, index) => (
             <CellSimple
               key={index}
-              height="compact"
+              height="normal"
               title={partner}
             />
           ))}
@@ -399,7 +379,7 @@ export default function UniversityDashboard() {
 
   // Главный обзор
   const OverviewTab = () => (
-    <Flex direction="column" gap={16}>
+    <Flex direction="column" gap={16} style={{width: '100%'}}>
       <KeyMetricsCard />
       <QualityMetricsCard />
       <InstitutesList />
@@ -408,7 +388,7 @@ export default function UniversityDashboard() {
 
   // Студенты
   const   StudentsTab = () => (
-    <Flex direction="column" gap={16}>
+    <Flex direction="column" gap={16} style={{width: '100%'}}>
       <StudentDistributionCard />
       <InternationalStudentsCard />
       <ProblemAreasCard />
@@ -417,21 +397,22 @@ export default function UniversityDashboard() {
 
   // Партнеры
   const PartnersTab = () => (
-    <Flex direction="column" gap={16}>
+    <Flex direction="column" gap={16} style={{width: '100%'}}>
       <TargetAdmissionCard />
     </Flex>
   );
 
   return (
     <Panel mode="secondary" className="wrap">
-      <Container>
-        <Flex direction="column" gap={24}>
+      <Container >
+        <Flex direction="column" gap={24} align="center">
           {/* Заголовок */}
-          <Flex direction="column" gap={8}>
+          <Flex direction="column" gap={8} >
             <Typography.Headline variant="large-strong">
               {universityData.university.name}
             </Typography.Headline>
             <Flex gap={12} align="center">
+              <Dot />
               <Typography.Body variant="small" appearance="neutral">
                 {universityData.university.status}
               </Typography.Body>

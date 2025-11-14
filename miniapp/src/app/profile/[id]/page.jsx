@@ -558,8 +558,8 @@ export default function ProfilePage() {
             />
           </CellList>
         </Flex>
-        <Container >
-          <Button onClick={handleLogout} size="small">Выйти</Button>
+        <Container style={{width: '100%'}}>
+          <Button onClick={handleLogout} size="medium" stretched>Выйти</Button>
         </Container>
         {/* Действия
         <Container

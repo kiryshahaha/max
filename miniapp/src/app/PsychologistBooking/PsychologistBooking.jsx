@@ -10,7 +10,8 @@ import {
   Flex,
   Spinner
 } from "@maxhub/max-ui";
-import { Select, DatePicker, Modal, message, Tag, Input, App, Row, Col, Card } from "antd";
+import { Select, DatePicker, Modal, message, Tag, Input, App, Row, Col, Card,  } from "antd";
+import { Button as AntdButton } from "antd";
 import dayjs from "dayjs";
 import 'dayjs/locale/ru';
 
@@ -294,69 +295,66 @@ export default function PsychologistBooking({ user }) {
   };
 
   // Функция для красивого отображения времени
-  const renderTimeSlots = () => {
-    if (availableSlots.length === 0) {
-      return (
-        <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
-          Нет доступного времени на выбранную дату
-        </div>
-      );
-    }
-
+ const renderTimeSlots = () => {
+  if (availableSlots.length === 0) {
     return (
-      <Row gutter={[8, 8]} style={{ marginTop: '8px' }}>
-        {availableSlots.map((slot) => (
-          <Col span={8} key={slot}>
-            <Card
-              size="small"
-              style={{
-                textAlign: 'center',
-                cursor: 'pointer',
-                border: selectedTime === slot ? '2px solid #1890ff' : '1px solid #d9d9d9',
-                background: selectedTime === slot ? '#f0f8ff' : '#fff',
-                transition: 'all 0.3s'
-              }}
-              onClick={() => setSelectedTime(slot)}
-              hoverable
-            >
-              <div style={{ fontSize: '16px', fontWeight: '500' }}>
-                {slot}
-              </div>
-            </Card>
-          </Col>
-        ))}
-      </Row>
+      <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
+        Нет доступного времени на выбранную дату
+      </div>
     );
-  };
+  }
+
+  return (
+    <div style={{ 
+      display: 'grid', 
+      gridTemplateColumns: 'repeat(3, 1fr)', 
+      gap: '8px', 
+      marginTop: '8px' 
+    }}>
+      {availableSlots.map((slot) => (
+        <div
+          key={slot}
+          style={{
+            textAlign: 'center',
+            cursor: 'pointer',
+            border: selectedTime === slot ? '2px solid #1890ff' : '1px solid #d9d9d9',
+            // background: selectedTime === slot ? '#f0f8ff' : '#fff',
+            transition: 'all 0.3s',
+            borderRadius: '6px',
+            padding: '12px 8px',
+            // fontSize: '16px',
+            fontWeight: '500'
+          }}
+          onClick={() => setSelectedTime(slot)}
+        >
+          {slot}
+        </div>
+      ))}
+    </div>
+  );
+};
 
   return (
     <>
-      <Container>
+      <Flex direction="column">
         <CellList
-          filled
+          style={{ width: '100%' }}
           mode="island"
           header={
-            <CellHeader titleStyle="caps">
-              <Flex direction="row" align="center" justify="space-between">
-                <span>Запись к психологу</span>
-
-                <Button
-                  type="link"
-                  onClick={() => setIsModalVisible(true)}
-                  style={{ fontSize: "12px" }}
-                >
-                  Новая запись
-                </Button>
-              </Flex>
+            <CellHeader>
+              Запись к психологу
             </CellHeader>
           }
         >
+
+
           {appointmentsLoading ? (
             <CellSimple>
               <Spinner />
             </CellSimple>
           ) : userAppointments.length > 0 ? (
             userAppointments.map((appointment, index) => (
+
               <CellSimple
                 key={index}
                 after={
@@ -371,6 +369,7 @@ export default function PsychologistBooking({ user }) {
                 )}
               />
             ))
+
           ) : (
             <CellSimple>
               У вас нет активных записей
@@ -383,108 +382,118 @@ export default function PsychologistBooking({ user }) {
               </Button>
             </CellSimple>
           )}
+
+
+        <Button
+          type="link"
+          onClick={() => setIsModalVisible(true)}
+          mode="secondary"
+          stretched="true"
+        >
+          Новая запись
+        </Button>
         </CellList>
-      </Container>
+        
+      </Flex>
 
-      <Modal
-        title="Запись к психологу"
-        open={isModalVisible}
-        onCancel={() => {
-          setIsModalVisible(false);
-          resetForm();
-        }}
-        footer={[
-          <Button
-            key="cancel"
-            onClick={() => {
-              setIsModalVisible(false);
-              resetForm();
-            }}
-          >
-            Отмена
-          </Button>,
+<Modal
+  title="Запись к психологу"
+  open={isModalVisible}
+  onCancel={() => {
+    setIsModalVisible(false);
+    resetForm();
+  }}
+  footer={
+    <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+<AntdButton
+  key="cancel"
+  danger
+  onClick={() => {
+    setIsModalVisible(false);
+    resetForm();
+  }}
+>
+  Отмена
+</AntdButton>
 
-          <Button
-            key="submit"
-            type="primary"
-            loading={loading}
-            onClick={createAppointment}
-            disabled={!selectedPsychologist || !selectedDate || !selectedTime}
-          >
-            Записаться
-          </Button>
-        ]}
+<AntdButton
+  key="submit"
+  type="primary"
+  loading={loading}
+  onClick={createAppointment}
+  disabled={!selectedPsychologist || !selectedDate || !selectedTime}
+>
+  Записаться
+</AntdButton>
+    </div>
+  }
+>
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    {/* ПСИХОЛОГ */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+      <span style={{ fontWeight: 500, fontSize: '14px' }}>Психолог:</span>
+      <Select
+        placeholder="Выберите психолога"
+        value={selectedPsychologist}
+        onChange={handlePsychologistChange}
+        size="large"
+        style={{ width: '100%' }}
       >
-        <Flex direction="column" gap={4}>
-          {/* ПСИХОЛОГ */}
-          <Flex direction="column" gap={1}>
-            <span style={{ fontWeight: 500 }}>Психолог:</span>
+        {PSYCHOLOGISTS.map((name) => (
+          <Option key={name} value={name}>
+            {name}
+          </Option>
+        ))}
+      </Select>
+    </div>
 
-            <Select
-              style={{ width: "100%" }}
-              placeholder="Выберите психолога"
-              value={selectedPsychologist}
-              onChange={handlePsychologistChange}
-              size="large"
-            >
-              {PSYCHOLOGISTS.map((name) => (
-                <Option key={name} value={name}>
-                  {name}
-                </Option>
-              ))}
-            </Select>
-          </Flex>
+    {/* ДАТА */}
+    {selectedPsychologist && (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <span style={{ fontWeight: 500, fontSize: '14px' }}>Дата приема:</span>
+        <DatePicker
+          placeholder="Выберите дату"
+          value={selectedDate}
+          onChange={handleDateChange}
+          disabledDate={(current) => !isDateAvailable(current)}
+          format="DD.MM.YYYY"
+          size="large"
+          style={{ width: '100%' }}
+          allowClear={false}
+        />
+        <span style={{ fontSize: '12px', color: '#666' }}>
+          Доступны только даты, когда психолог принимает
+        </span>
+      </div>
+    )}
 
-          {/* ДАТА */}
-          {selectedPsychologist && (
-            <Flex direction="column" gap={1}>
-              <span style={{ fontWeight: 500 }}>Дата приема:</span>
+    {/* ВРЕМЯ */}
+    {selectedDate && (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <span style={{ fontWeight: 500, fontSize: '14px' }}>Время приема:</span>
+        {loading ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+            <Spinner />
+          </div>
+        ) : (
+          renderTimeSlots()
+        )}
+      </div>
+    )}
 
-              <DatePicker
-                style={{ width: "100%" }}
-                placeholder="Выберите дату"
-                value={selectedDate}
-                onChange={handleDateChange}
-                disabledDate={(current) => !isDateAvailable(current)}
-                format="DD.MM.YYYY"
-                size="large"
-                allowClear={false}
-              />
-
-              <span style={{ fontSize: 12, color: "#666" }}>
-                Доступны только даты, когда психолог принимает
-              </span>
-            </Flex>
-          )}
-
-          {/* ВРЕМЯ */}
-          {selectedDate && (
-            <Flex direction="column" gap={1}>
-              <span style={{ fontWeight: 500 }}>Время приема:</span>
-              {loading ? (
-                <Flex align="center" justify="center" style={{ padding: 20 }}>
-                  <Spinner />
-                </Flex>
-              ) : (
-                renderTimeSlots()
-              )}
-            </Flex>
-          )}
-
-          {/* ПРИМЕЧАНИЕ */}
-          <Flex direction="column" gap={1}>
-            <span style={{ fontWeight: 500 }}>Примечание (необязательно):</span>
-
-            <TextArea
-              placeholder="Дополнительная информация..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-              style={{ resize: "vertical" }}
-            />
-          </Flex>
-        </Flex>
-      </Modal>
+    {/* ПРИМЕЧАНИЕ */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+      <span style={{ fontWeight: 500, fontSize: '14px' }}>Примечание (необязательно):</span>
+      <TextArea
+        placeholder="Дополнительная информация..."
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        rows={3}
+        style={{ resize: "vertical" }}
+      />
+    </div>
+  </div>
+</Modal>
     </>
   );
 }

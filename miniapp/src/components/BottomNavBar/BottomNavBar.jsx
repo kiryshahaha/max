@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styles from "./BottomNavBar.module.css";
-import { CircleUser, ScanFace, ToolCase, Calendar } from "lucide-react";
+import { CircleUser, ScanFace, ToolCase, Calendar, LayoutDashboard } from "lucide-react";
 import { useEffect, useState } from "react";
 import { clientSupabase as supabase } from "../../../lib/supabase-client";
 
@@ -39,6 +39,7 @@ export default function BottomNavBar() {
   const authNavItems = [
     { name: "Главная", href: "/main", Icon: ToolCase },
     { name: "Расписание", href: "/schedule/week", Icon: Calendar },
+    { name: "Дашборд", href: "/UniversityDashboard", Icon: LayoutDashboard },
     { name: "Профиль", href: user ? `/profile/${user.id}` : "/auth", Icon: CircleUser },
   ];
 
