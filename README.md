@@ -830,5 +830,5 @@ cd miniapp && npm run dev
 - WebSocket для real-time обновлений
 
 ## Данные для входа в аккаунт
-логин = user50369
-пароль = Trening0811!
+- логин = user50369
+- пароль = Trening0811!
