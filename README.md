@@ -212,8 +212,22 @@ pip install -r requirements.txt
 **Настройка переменных окружения** (файл `backend/.env`):
 
 ```env
-SUPABASE_URL=your_supabase_url
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+NEXT_PUBLIC_SUPABASE_URL=https://aspqnmjesqwqvajbrgxk.supabase.co
+SUPABASE_URL=https://aspqnmjesqwqvajbrgxk.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzcHFubWplc3F3cXZhamJyZ3hrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIxNTUxMjYsImV4cCI6MjA3NzczMTEyNn0.6kfUnrHKeGAZGr6k36vPam75etlQu-sfP_SKKqO8h0Q
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzcHFubWplc3F3cXZhamJyZ3hrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MjE1NTEyNiwiZXhwIjoyMDc3NzMxMTI2fQ.T0jjStBN5Cb2iAe5VYwAS2Wkru8yiXJdzLnP6ACDOmI
+PARSER_SERVICE_URL=http://localhost:3001
+
+```
+
+**Настройка переменных окружения** (файл `backend/psychologist_service/.env`):
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://aspqnmjesqwqvajbrgxk.supabase.co
+SUPABASE_URL=https://aspqnmjesqwqvajbrgxk.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzcHFubWplc3F3cXZhamJyZ3hrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIxNTUxMjYsImV4cCI6MjA3NzczMTEyNn0.6kfUnrHKeGAZGr6k36vPam75etlQu-sfP_SKKqO8h0Q
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzcHFubWplc3F3cXZhamJyZ3hrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MjE1NTEyNiwiZXhwIjoyMDc3NzMxMTI2fQ.T0jjStBN5Cb2iAe5VYwAS2Wkru8yiXJdzLnP6ACDOmI
+
 ```
 
 **Запуск сервера:**
@@ -270,12 +284,12 @@ npm run dev
 **Переменные окружения** (файл `miniapp/.env`):
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_role_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-PARSER_SERVICE_URL=parser_url
-FASTAPI_URL=backend_url
-PSYCHOLOGIST_API_URL=psychologist_service_url
+NEXT_PUBLIC_SUPABASE_URL=https://aspqnmjesqwqvajbrgxk.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzcHFubWplc3F3cXZhamJyZ3hrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIxNTUxMjYsImV4cCI6MjA3NzczMTEyNn0.6kfUnrHKeGAZGr6k36vPam75etlQu-sfP_SKKqO8h0Q
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzcHFubWplc3F3cXZhamJyZ3hrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MjE1NTEyNiwiZXhwIjoyMDc3NzMxMTI2fQ.T0jjStBN5Cb2iAe5VYwAS2Wkru8yiXJdzLnP6ACDOmI
+PARSER_SERVICE_URL=http://localhost:3001
+FASTAPI_URL=http://127.0.0.1:8000
+PSYCHOLOGIST_API_URL=http://127.0.0.1:8001
 ```
 
 ## Функционал miniapp
